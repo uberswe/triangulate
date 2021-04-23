@@ -45,7 +45,7 @@ func Generate(source image.Image, userParams UserParams) *Image {
 
 	canvas := gg.NewContext(s.DestWidth, s.DestHeight)
 	canvas.SetColor(color.Black)
-	canvas.DrawRectangle(0, 0, float64(s.sourceWidth), float64(s.sourceHeight))
+	canvas.DrawRectangle(0, 0, float64(s.DestWidth), float64(s.DestHeight))
 	canvas.FillPreserve()
 
 	s.source = source

@@ -1,22 +1,146 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
-	"github.com/uberswe/art/generator"
-	"image"
-	"image/png"
+	"github.com/gorilla/mux"
+	"github.com/uberswe/art"
+	"html/template"
+	"io"
 	"log"
 	"math/rand"
 	"net/http"
 	"os"
+	"path/filepath"
+	"sync"
 	"time"
 )
 
+type GeneratePollResponse struct {
+	Queue      int    `json:"queue"`
+	Link       string `json:"link"`
+	Identifier string `json:"identifier"`
+}
+
 var (
-	totalCycleCount = 5000
-	sourceDir       = "resources/source"
-	outDir          = "resources/out"
+	sourceDir = "resources/source"
+	outDir    = "resources/out"
+	queue     []string
+	images    map[string]string
+	mutex     = &sync.Mutex{}
 )
+
+func main() {
+	r := mux.NewRouter()
+	fs := http.FileServer(http.Dir("./assets/build/static"))
+	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", fs))
+	r.HandleFunc("/api/v1/generate", generate)
+	r.HandleFunc("/api/v1/generate/{id}", generatePoll)
+	r.HandleFunc("/api/v1/image/{id}", image)
+	r.HandleFunc("/", serveTemplate)
+
+	log.Println("Listening on :3000...")
+	err := http.ListenAndServe(":3000", r)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func serveTemplate(w http.ResponseWriter, r *http.Request) {
+	indexFile := filepath.Join("assets", "build", "index.html")
+
+	tmpl, err := template.New("").ParseFiles(indexFile)
+	if err != nil {
+		log.Println(err.Error())
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+	// check your err
+	err = tmpl.ExecuteTemplate(w, "index", nil)
+	if err != nil {
+		log.Println(err.Error())
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+}
+
+func generate(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	mutex.Lock()
+	id := generateUniqueId(queue, 10)
+	queue = append(queue, id)
+	resp := GeneratePollResponse{
+		Queue:      len(queue),
+		Link:       "",
+		Identifier: id,
+	}
+	go callGenerator(id)
+	mutex.Unlock()
+	err := json.NewEncoder(w).Encode(resp)
+	if err != nil {
+		log.Println(err.Error())
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+}
+
+func callGenerator(id string) {
+	if images == nil {
+		images = map[string]string{}
+	}
+	res := art.GenerateImage(nil, sourceDir, outDir)
+	mutex.Lock()
+	images[id] = res
+	i := indexOf(id, queue)
+	if i > -1 {
+		queue = append(queue[:i], queue[i+1:]...)
+	}
+	mutex.Unlock()
+}
+
+func image(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	res := ""
+	mutex.Lock()
+	if val, ok := images[vars["id"]]; ok {
+		res = fmt.Sprintf("%s/%s", outDir, val)
+	}
+	mutex.Unlock()
+	img, err := os.Open(res)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+	defer img.Close()
+	w.Header().Set("Content-Type", "image/png")
+	io.Copy(w, img)
+}
+
+func generatePoll(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	w.Header().Set("Content-Type", "application/json")
+	mutex.Lock()
+	res := ""
+	id := vars["id"]
+	i := indexOf(id, queue)
+	if i == -1 {
+		if _, ok := images[id]; ok {
+			res = fmt.Sprintf("/api/v1/image/%s", id)
+		}
+	}
+	resp := GeneratePollResponse{
+		Queue: i + 1,
+		Link:  res,
+	}
+	mutex.Unlock()
+	err := json.NewEncoder(w).Encode(resp)
+	if err != nil {
+		log.Println(err.Error())
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+}
 
 func init() {
 	rand.Seed(time.Now().UnixNano())
@@ -35,90 +159,19 @@ func init() {
 	}
 }
 
-func main() {
-
+func indexOf(word string, data []string) int {
+	for k, v := range data {
+		if word == v {
+			return k
+		}
+	}
+	return -1
 }
 
-func generateImage(img image.Image) {
-	var err error
-	imgName := fmt.Sprintf("%d_%s.png", time.Now().UnixNano(), randStringRunes(10))
-
-	if img == nil {
-		img, err = loadRandomUnsplashImage(2000, 2000)
+func generateUniqueId(data []string, len int) string {
+	id := art.RandStringRunes(len)
+	if indexOf(id, data) == -1 {
+		return id
 	}
-	if err != nil {
-		log.Panicln(err)
-	}
-
-	s := generator.Generate(img, generator.UserParams{
-		StrokeRatio:              0.75,
-		DestWidth:                img.Bounds().Size().X,
-		DestHeight:               img.Bounds().Size().Y,
-		InitialAlpha:             0.1,
-		StrokeReduction:          0.002,
-		AlphaIncrease:            0.06,
-		StrokeInversionThreshold: 0.05,
-		StrokeJitter:             int(0.01 * float64(img.Bounds().Size().X)),
-		MinEdgeCount:             4,
-		MaxEdgeCount:             4,
-		RotationSeed:             0.5,
-		RandomRotation:           true,
-		Stroke:                   false,
-	})
-
-	rand.Seed(time.Now().Unix())
-
-	for i := 0; i < totalCycleCount; i++ {
-		s.Update()
-	}
-
-	err = saveOutput(s.Output(), fmt.Sprintf("%s/%s", outDir, imgName))
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	err = saveOutput(img, fmt.Sprintf("%s/%s", sourceDir, imgName))
-	if err != nil {
-		log.Println(err)
-		return
-	}
-}
-
-func loadRandomUnsplashImage(width, height int) (image.Image, error) {
-	url := fmt.Sprintf("https://source.unsplash.com/random/%dx%d", width, height)
-	res, err := http.Get(url)
-	if err != nil {
-		return nil, err
-	}
-	defer res.Body.Close()
-
-	img, _, err := image.Decode(res.Body)
-	return img, err
-}
-
-func saveOutput(img image.Image, filePath string) error {
-	f, err := os.Create(filePath)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	// Encode to `PNG` with `DefaultCompression` level
-	// then save to file
-	err = png.Encode(f, img)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func randStringRunes(n int) string {
-	letterRunes := []rune("bcdfghjlmnpqrstvwxz0123456789")
-	b := make([]rune, n)
-	for i := range b {
-		b[i] = letterRunes[rand.Intn(len(letterRunes))]
-	}
-	return string(b)
+	return generateUniqueId(data, len+1)
 }
