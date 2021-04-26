@@ -3,7 +3,7 @@ package art
 import (
 	"fmt"
 	"github.com/uberswe/art/generator"
-	"image"
+	image2 "image"
 	"image/png"
 	"log"
 	"math/rand"
@@ -12,12 +12,12 @@ import (
 	"time"
 )
 
-func GenerateImage(img image.Image, src string, out string) string {
+func GenerateImage(img image2.Image, src string, out string, width int, height int) string {
 	var err error
 	imgName := fmt.Sprintf("%d_%s.png", time.Now().UnixNano(), RandStringRunes(10))
 
 	if img == nil {
-		img, err = loadRandomUnsplashImage(2000, 2000)
+		img, err = loadRandomUnsplashImage(width, height)
 	}
 	if err != nil {
 		log.Panicln(err)
@@ -33,7 +33,7 @@ func GenerateImage(img image.Image, src string, out string) string {
 		StrokeReduction:          0.002,
 		AlphaIncrease:            0.06,
 		StrokeInversionThreshold: 0.05,
-		StrokeJitter:             int(0.01 * float64(img.Bounds().Size().X)),
+		StrokeJitter:             int(0.1 * float64(img.Bounds().Size().X)),
 		MinEdgeCount:             3,
 		MaxEdgeCount:             7,
 		RotationSeed:             0.5,
@@ -61,7 +61,7 @@ func GenerateImage(img image.Image, src string, out string) string {
 	return imgName
 }
 
-func loadRandomUnsplashImage(width, height int) (image.Image, error) {
+func loadRandomUnsplashImage(width, height int) (image2.Image, error) {
 	url := fmt.Sprintf("https://source.unsplash.com/random/%dx%d", width, height)
 	res, err := http.Get(url)
 	if err != nil {
@@ -69,11 +69,11 @@ func loadRandomUnsplashImage(width, height int) (image.Image, error) {
 	}
 	defer res.Body.Close()
 
-	img, _, err := image.Decode(res.Body)
+	img, _, err := image2.Decode(res.Body)
 	return img, err
 }
 
-func saveOutput(img image.Image, filePath string) error {
+func saveOutput(img image2.Image, filePath string) error {
 	f, err := os.Create(filePath)
 	if err != nil {
 		return err
