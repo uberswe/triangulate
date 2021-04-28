@@ -97,9 +97,11 @@ class App extends React.Component {
             isLoading: true
         });
         let fdata = new FormData ();
-        this.state.filesUpload.forEach(function(d){
-            fdata.append('fileUpload', d);
-        })
+        if (this.state.filesUpload != null) {
+            this.state.filesUpload.forEach (function (d) {
+                fdata.append ('fileUpload', d);
+            })
+        }
         let data = {
             width: this.state.width,
             height: this.state.height,
