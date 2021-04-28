@@ -44,11 +44,11 @@ class App extends React.Component {
         let value = target.type === 'checkbox' ? target.checked : target.value;
         const name = target.name;
         if (name === "max") {
-            if (value < this.state.min) {
+            if (parseInt(value) < parseInt(this.state.min)) {
                 value = this.state.min;
             }
         } else if (name === "min") {
-            if (value > this.state.max) {
+            if (parseInt(value) > parseInt(this.state.max)) {
                 value = this.state.max;
             }
         } else if (name === "width") {
