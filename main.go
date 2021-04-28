@@ -52,7 +52,7 @@ func Run() {
 	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", fs))
 	r.HandleFunc("/api/v1/generate", generate)
 	r.HandleFunc("/api/v1/generate/{id}", generatePoll)
-	r.HandleFunc("/api/v1/image/{id}", image)
+	r.HandleFunc("/api/v1/Img/{id}", Img)
 	r.HandleFunc("/", index)
 
 	log.Println("Listening on :3000...")
@@ -73,7 +73,7 @@ func callGenerator(job Image) {
 	}
 	mutex.Unlock()
 	if i > -1 {
-		res := GenerateImage(nil, sourceDir, outDir, job.Width, job.Height)
+		res := GenerateImage(job.Image, sourceDir, outDir, job.Width, job.Height, job.Shapes, job.ShapesStroke, job.Triangulate, job.TriangulateBefore, job.StrokeThickness, job.BlurAmount, job.Min, job.Max)
 		mutex.Lock()
 		job.FileName = res
 		images[job.Identifier] = job

@@ -1,13 +1,9 @@
 package art
 
-import "time"
-
-type GenerateRequest struct {
-	Width     int    `json:"width"`
-	Height    int    `json:"height"`
-	ImageType string `json:"image_type"`
-	Shapes    bool   `json:"shapes"`
-}
+import (
+	"image"
+	"time"
+)
 
 type GeneratePollResponse struct {
 	Queue      int    `json:"queue"`
@@ -16,12 +12,20 @@ type GeneratePollResponse struct {
 }
 
 type Image struct {
-	FileName   string    `json:"file_name"`
-	Identifier string    `json:"identifier"`
-	Timestamp  time.Time `json:"timestamp"`
-	RequestIP  string    `json:"request_ip"`
-	Width      int
-	Height     int
-	ImageType  string
-	Shapes     bool
+	FileName          string    `json:"file_name"`
+	Identifier        string    `json:"identifier"`
+	Timestamp         time.Time `json:"timestamp"`
+	RequestIP         string    `json:"request_ip"`
+	Width             int
+	Height            int
+	ImageType         string
+	Shapes            bool
+	Max               int
+	Min               int
+	BlurAmount        int
+	ShapesStroke      bool
+	StrokeThickness   int
+	Triangulate       bool
+	TriangulateBefore bool
+	Image             image.Image
 }

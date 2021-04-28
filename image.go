@@ -3,7 +3,7 @@ package art
 import (
 	"fmt"
 	"github.com/uberswe/art/generator"
-	image2 "image"
+	"image"
 	"image/png"
 	"log"
 	"math/rand"
@@ -12,33 +12,34 @@ import (
 	"time"
 )
 
-func GenerateImage(img image2.Image, src string, out string, width int, height int) string {
+func GenerateImage(img image.Image, src string, out string, width int, height int, shapes bool, stroke bool, triangulate bool, triangulateBefore bool, StrokeThickness int, blurAmount int, shapeMin int, shapeMax int) string {
 	var err error
 	imgName := fmt.Sprintf("%d_%s.png", time.Now().UnixNano(), RandStringRunes(10))
 
 	if img == nil {
 		img, err = loadRandomUnsplashImage(width, height)
-	}
-	if err != nil {
-		log.Panicln(err)
+		if err != nil {
+			log.Println(err)
+			return ""
+		}
 	}
 
-	totalCycleCount := 2000
+	totalCycleCount := 500 * blurAmount
 
 	s := generator.Generate(img, generator.UserParams{
-		StrokeRatio:              0.75,
-		DestWidth:                img.Bounds().Size().X,
-		DestHeight:               img.Bounds().Size().Y,
+		StrokeRatio:              0.25 * float64(StrokeThickness),
+		DestWidth:                width,
+		DestHeight:               height,
 		InitialAlpha:             0.1,
 		StrokeReduction:          0.002,
 		AlphaIncrease:            0.06,
 		StrokeInversionThreshold: 0.05,
 		StrokeJitter:             int(0.1 * float64(img.Bounds().Size().X)),
-		MinEdgeCount:             3,
-		MaxEdgeCount:             7,
-		RotationSeed:             0.5,
+		MinEdgeCount:             shapeMin,
+		MaxEdgeCount:             shapeMax,
+		RotationSeed:             0.45,
 		RandomRotation:           true,
-		Stroke:                   true,
+		Stroke:                   stroke,
 	})
 
 	rand.Seed(time.Now().Unix())
@@ -61,7 +62,7 @@ func GenerateImage(img image2.Image, src string, out string, width int, height i
 	return imgName
 }
 
-func loadRandomUnsplashImage(width, height int) (image2.Image, error) {
+func loadRandomUnsplashImage(width, height int) (image.Image, error) {
 	url := fmt.Sprintf("https://source.unsplash.com/random/%dx%d", width, height)
 	res, err := http.Get(url)
 	if err != nil {
@@ -69,11 +70,11 @@ func loadRandomUnsplashImage(width, height int) (image2.Image, error) {
 	}
 	defer res.Body.Close()
 
-	img, _, err := image2.Decode(res.Body)
+	img, _, err := image.Decode(res.Body)
 	return img, err
 }
 
-func saveOutput(img image2.Image, filePath string) error {
+func saveOutput(img image.Image, filePath string) error {
 	f, err := os.Create(filePath)
 	if err != nil {
 		return err
