@@ -1,9 +1,13 @@
 package art
 
 import (
+	"fmt"
+	"github.com/esimov/triangle"
 	"github.com/gorilla/mux"
 	"github.com/throttled/throttled/v2"
 	"github.com/throttled/throttled/v2/store/memstore"
+	"image"
+	"image/png"
 	"log"
 	"math/rand"
 	"net/http"
@@ -63,9 +67,11 @@ func Run() {
 }
 
 func callGenerator(job Image) {
+	var err error
 	if images == nil {
 		images = map[string]Image{}
 	}
+	imgName := fmt.Sprintf("%d_%s.png", time.Now().UnixNano(), RandStringRunes(10))
 	mutex.Lock()
 	i := indexOf(job.Identifier, queue)
 	if i > -1 {
@@ -73,12 +79,74 @@ func callGenerator(job Image) {
 	}
 	mutex.Unlock()
 	if i > -1 {
-		res := GenerateImage(job.Image, sourceDir, outDir, job.Width, job.Height, job.Shapes, job.ShapesStroke, job.Triangulate, job.TriangulateBefore, job.StrokeThickness, job.BlurAmount, job.Min, job.Max)
+		p := &triangle.Processor{
+			BlurRadius:      job.BlurAmount,
+			SobelThreshold:  10,
+			PointsThreshold: 20,
+			MaxPoints:       2500,
+			Wireframe:       0,
+			Noise:           0,
+			StrokeWidth:     1,
+			Grayscale:       false,
+		}
+		tri := triangle.Image{Processor: *p}
+		img := job.Image
+		if job.Triangulate && job.TriangulateBefore {
+			img, _, _, err = tri.Draw(img, nil, triangulate)
+			if err != nil {
+				log.Println(err)
+				return
+			}
+		}
+		if job.Shapes || (!job.Shapes && !job.Triangulate) {
+			img = GenerateImage(img, job.Width, job.Height, job.ShapesStroke, job.StrokeThickness, job.BlurAmount, job.Min, job.Max)
+		}
+		if job.Triangulate && !job.TriangulateBefore {
+			img, _, _, err = tri.Draw(img, nil, triangulate)
+			if err != nil {
+				log.Println(err)
+				return
+			}
+		}
+
+		err = saveOutput(img, fmt.Sprintf("%s/%s", outDir, imgName))
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+		err = saveOutput(img, fmt.Sprintf("%s/%s", sourceDir, imgName))
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
 		mutex.Lock()
-		job.FileName = res
+		job.FileName = imgName
 		images[job.Identifier] = job
 		mutex.Unlock()
 	}
+}
+
+func triangulate() {
+	log.Println("triangulate done")
+}
+
+func saveOutput(img image.Image, filePath string) error {
+	f, err := os.Create(filePath)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	// Encode to `PNG` with `DefaultCompression` level
+	// then save to file
+	err = png.Encode(f, img)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func init() {
@@ -114,4 +182,13 @@ func generateUniqueId(data []string, len int) string {
 		return id
 	}
 	return generateUniqueId(data, len+1)
+}
+
+func RandStringRunes(n int) string {
+	letterRunes := []rune("bcdfghjlmnpqrstvwxz0123456789")
+	b := make([]rune, n)
+	for i := range b {
+		b[i] = letterRunes[rand.Intn(len(letterRunes))]
+	}
+	return string(b)
 }

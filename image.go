@@ -4,23 +4,20 @@ import (
 	"fmt"
 	"github.com/uberswe/art/generator"
 	"image"
-	"image/png"
 	"log"
 	"math/rand"
 	"net/http"
-	"os"
 	"time"
 )
 
-func GenerateImage(img image.Image, src string, out string, width int, height int, shapes bool, stroke bool, triangulate bool, triangulateBefore bool, StrokeThickness int, blurAmount int, shapeMin int, shapeMax int) string {
+func GenerateImage(img image.Image, width int, height int, stroke bool, StrokeThickness int, blurAmount int, shapeMin int, shapeMax int) image.Image {
 	var err error
-	imgName := fmt.Sprintf("%d_%s.png", time.Now().UnixNano(), RandStringRunes(10))
 
 	if img == nil {
 		img, err = loadRandomUnsplashImage(width, height)
 		if err != nil {
 			log.Println(err)
-			return ""
+			return nil
 		}
 	}
 
@@ -47,19 +44,7 @@ func GenerateImage(img image.Image, src string, out string, width int, height in
 	for i := 0; i < totalCycleCount; i++ {
 		s.Update()
 	}
-
-	err = saveOutput(s.Output(), fmt.Sprintf("%s/%s", out, imgName))
-	if err != nil {
-		log.Println(err)
-		return "#"
-	}
-
-	err = saveOutput(img, fmt.Sprintf("%s/%s", src, imgName))
-	if err != nil {
-		log.Println(err)
-		return "#"
-	}
-	return imgName
+	return s.Output()
 }
 
 func loadRandomUnsplashImage(width, height int) (image.Image, error) {
@@ -72,30 +57,4 @@ func loadRandomUnsplashImage(width, height int) (image.Image, error) {
 
 	img, _, err := image.Decode(res.Body)
 	return img, err
-}
-
-func saveOutput(img image.Image, filePath string) error {
-	f, err := os.Create(filePath)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	// Encode to `PNG` with `DefaultCompression` level
-	// then save to file
-	err = png.Encode(f, img)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func RandStringRunes(n int) string {
-	letterRunes := []rune("bcdfghjlmnpqrstvwxz0123456789")
-	b := make([]rune, n)
-	for i := range b {
-		b[i] = letterRunes[rand.Intn(len(letterRunes))]
-	}
-	return string(b)
 }

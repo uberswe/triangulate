@@ -44,11 +44,11 @@ class App extends React.Component {
         let value = target.type === 'checkbox' ? target.checked : target.value;
         const name = target.name;
         if (name === "max") {
-            if (parseInt(value) < parseInt(this.state.min)) {
+            if (parseInt (value) < parseInt (this.state.min)) {
                 value = this.state.min;
             }
         } else if (name === "min") {
-            if (parseInt(value) > parseInt(this.state.max)) {
+            if (parseInt (value) > parseInt (this.state.max)) {
                 value = this.state.max;
             }
         } else if (name === "width") {
@@ -62,6 +62,18 @@ class App extends React.Component {
                 value = 1200;
             } else if (value < 0) {
                 value = 0;
+            }
+        } else if (name === "triangulate") {
+            if (!value && !this.state.shapes) {
+                this.setState({
+                    shapes: true
+                })
+            }
+        } else if (name === "shapes") {
+            if (!value && !this.state.triangulate) {
+                this.setState({
+                    triangulate: true
+                })
             }
         }
         this.setState ({
@@ -143,38 +155,47 @@ class App extends React.Component {
         } else if (this.state.queue === 0) {
             queueHolder = <div>Rendering, your image is being generated.</div>
         }
-        let shapeOptions = ""
+        let shapeOptions, shapeOptions2, shapeOptions3, shapeOptions4 = ""
         if (this.state.shapes) {
-            shapeOptions = (<Row>
-                    <Col md={12}>
-                        <Form.Group>
-                            <Form.Check checked={this.state.triangulateBefore} onChange={this.handleInputChange}
-                                        name="triangulateBefore"
-                                        label="Triangulate before shapes" type="checkbox" id={`TriangulateBefore`}/>
-                        </Form.Group>
-                        <Form.Group controlId="shapeVertexMin">
-                            <Form.Label>Minimum number of vertices: {this.state.min}</Form.Label>
-                            <Form.Control min="3" max="10" name="min" value={this.state.min}
-                                          onChange={this.handleInputChange} type="range"/>
-                        </Form.Group>
-                        <Form.Group controlId="shapeVertexMax">
-                            <Form.Label>Maximum number of vertices: {this.state.max}</Form.Label>
-                            <Form.Control min="3" max="10" name="max" value={this.state.max}
-                                          onChange={this.handleInputChange} type="range"/>
-                        </Form.Group>
+            shapeOptions = (<Col md={4}>
+                        <Row>
+                            <Col md={6}>
+                                <Form.Group controlId="shapeVertexMin">
+                                    <Form.Label>Min vertices: {this.state.min}</Form.Label>
+                                    <Form.Control min="3" max="10" name="min" value={this.state.min}
+                                                  onChange={this.handleInputChange} type="range"/>
+                                </Form.Group>
+                            </Col>
+                            <Col md={6}>
+                                <Form.Group controlId="shapeVertexMax">
+                                    <Form.Label>Max vertices: {this.state.max}</Form.Label>
+                                    <Form.Control min="3" max="10" name="max" value={this.state.max}
+                                                  onChange={this.handleInputChange} type="range"/>
+                                </Form.Group>
+                            </Col>
+                        </Row>
+                    </Col>);
+            shapeOptions2 = (<Col md={4}>
                         <Form.Group>
                             <Form.Check checked={this.state.shapeStroke} onChange={this.handleInputChange}
                                         name="shapeStroke"
                                         label="Add a stroke to shapes" type="checkbox" id={`Shapes`}/>
                         </Form.Group>
+            </Col>);
+            shapeOptions3 = (<Col md={4}>
                         <Form.Group controlId="strokeThickness">
                             <Form.Label>Stroke thickness</Form.Label>
                             <Form.Control min="1" max="10" name="strokeThickness" value={this.state.strokeThickness}
                                           onChange={this.handleInputChange} type="range"/>
                         </Form.Group>
-                    </Col>
-                </Row>
-            );
+            </Col>);
+            if (this.state.triangulate) {
+                shapeOptions4 = (<Form.Group>
+                    <Form.Check checked={this.state.triangulateBefore} onChange={this.handleInputChange}
+                                name="triangulateBefore"
+                                label="Triangulate before shapes" type="checkbox" id={`TriangulateBefore`}/>
+                </Form.Group>);
+            }
         }
         let imageUpload = ""
         if (this.state.imageType === "upload") {
@@ -192,62 +213,81 @@ class App extends React.Component {
         // Generate an image
         // Pick colors
         return (
-            <Container fluid>
+            <Container>
                 <Row>
                     <Col md={12}>
                         <Title/>
                     </Col>
-                    <Col md={6}>
+                    <Col md={12}>
                         <Form>
-                            <Form.Group>
-                                <Form.Label column mb={12}>
-                                    An image is used as a starting point
-                                </Form.Label>
-                                <div key={`inline-radio`} className="mb-12">
-                                    <Form.Check name="imageType" inline label="Upload an image" type="radio"
-                                                id={`inline-radio-1`} value={`upload`}
-                                                checked={this.state.imageType === "upload"}
-                                                onChange={this.handleInputChange}/>
-                                    <Form.Check name="imageType" inline label="Use a random image" type="radio"
-                                                id={`inline-radio-2`} value={'random'}
-                                                checked={this.state.imageType === "random"}
-                                                onChange={this.handleInputChange}/>
-                                </div>
-                            </Form.Group>
-                            {imageUpload}
                             <Row>
                                 <Col md={6}>
-                                    <Form.Group controlId="widthGroup">
-                                        <Form.Label>Width</Form.Label>
-                                        <Form.Control value={this.state.width} onChange={this.handleInputChange}
-                                                      name={`width`}
-                                                      type="Text"/>
-
+                                    <Form.Group>
+                                        <Form.Label column mb={12}>
+                                            An image is used as a starting point
+                                        </Form.Label>
+                                        <div key={`inline-radio`} className="mb-12">
+                                            <Form.Check name="imageType" inline label="Upload an image" type="radio"
+                                                        id={`inline-radio-1`} value={`upload`}
+                                                        checked={this.state.imageType === "upload"}
+                                                        onChange={this.handleInputChange}/>
+                                            <Form.Check name="imageType" inline label="Use a random image" type="radio"
+                                                        id={`inline-radio-2`} value={'random'}
+                                                        checked={this.state.imageType === "random"}
+                                                        onChange={this.handleInputChange}/>
+                                        </div>
                                     </Form.Group>
+                                    {imageUpload}
                                 </Col>
                                 <Col md={6}>
-                                    <Form.Group controlId="heightGroup">
-                                        <Form.Label>Height</Form.Label>
-                                        <Form.Control value={this.state.height} onChange={this.handleInputChange}
-                                                      name={`height`} type="Text"/>
-                                    </Form.Group>
+                                    <Row>
+                                        <Col md={6}>
+
+                                            <Form.Group controlId="widthGroup">
+                                                <Form.Label>Width</Form.Label>
+                                                <Form.Control value={this.state.width} onChange={this.handleInputChange}
+                                                              name={`width`}
+                                                              type="Text"/>
+
+                                            </Form.Group>
+                                        </Col>
+                                        <Col md={6}>
+                                            <Form.Group controlId="heightGroup">
+                                                <Form.Label>Height</Form.Label>
+                                                <Form.Control value={this.state.height}
+                                                              onChange={this.handleInputChange}
+                                                              name={`height`} type="Text"/>
+                                            </Form.Group>
+                                        </Col>
+                                    </Row>
                                 </Col>
                             </Row>
+                            <Row>
+                                <Col md={4}>
                             <Form.Group>
                                 <Form.Check checked={this.state.triangulate} onChange={this.handleInputChange}
                                             name="triangulate"
-                                            label="Triangulate (not implemented)" type="checkbox" id={`Triangulate`}/>
+                                            label="Triangulate" type="checkbox" id={`Triangulate`}/>
                             </Form.Group>
+                                </Col>
+                                <Col md={4}>
                             <Form.Group>
                                 <Form.Check checked={this.state.shapes} onChange={this.handleInputChange} name="shapes"
-                                            label="Add Shapes (Always)" type="checkbox" id={`Shapes`}/>
+                                            label="Add Shapes" type="checkbox" id={`Shapes`}/>
                             </Form.Group>
-                            {shapeOptions}
-                            <Form.Group controlId="BlurAmount">
-                                <Form.Label>Blur amount</Form.Label>
-                                <Form.Control min="1" max="10" name="blurAmount" value={this.state.blurAmount}
-                                              onChange={this.handleInputChange} type="range"/>
-                            </Form.Group>
+                                </Col>
+                                {shapeOptions2}
+                                <Col md={4}>
+                                    <Form.Group controlId="BlurAmount">
+                                        <Form.Label>Blur amount</Form.Label>
+                                        <Form.Control min="1" max="10" name="blurAmount" value={this.state.blurAmount}
+                                                      onChange={this.handleInputChange} type="range"/>
+                                    </Form.Group>
+                                </Col>
+                                {shapeOptions}
+                                {shapeOptions3}
+                                {shapeOptions4}
+                            </Row>
                             <Form.Group>
                                 <Button
                                     disabled={this.state.isLoading}
@@ -264,6 +304,9 @@ class App extends React.Component {
                 </Row>
                 <Row>
                     <Col md={12}>
+                        <hr/>
+                        Created by <a href="https://github.com/uberswe">Markus Tenghamn</a>
+                        <hr/>
                         This project uses ideas and code from <a
                         href="https://github.com/esimov/triangle">github.com/esimov/triangle</a> and <a
                         href="https://github.com/preslavrachev/generative-art-in-go">github.com/preslavrachev/generative-art-in-go</a>
