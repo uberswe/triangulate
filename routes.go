@@ -279,7 +279,7 @@ func Img(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer img.Close()
-	w.Header().Set("Content-Type", "Img/png")
+	w.Header().Set("Content-Type", "image/png")
 	io.Copy(w, img)
 }
 
@@ -292,7 +292,7 @@ func generatePoll(w http.ResponseWriter, r *http.Request) {
 	i := indexOf(id, queue)
 	if i == -1 {
 		if _, ok := images[id]; ok {
-			res = fmt.Sprintf("/api/v1/Img/%s", id)
+			res = fmt.Sprintf("/api/v1/img/%s.png", id)
 		}
 	}
 	resp := GeneratePollResponse{

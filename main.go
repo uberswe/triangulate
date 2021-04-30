@@ -6,7 +6,12 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/throttled/throttled/v2"
 	"github.com/throttled/throttled/v2/store/memstore"
+	"golang.org/x/image/font"
+	"golang.org/x/image/font/basicfont"
+	"golang.org/x/image/math/fixed"
 	"image"
+	"image/color"
+	"image/draw"
 	"image/png"
 	"log"
 	"math/rand"
@@ -56,7 +61,7 @@ func Run() {
 	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", fs))
 	r.HandleFunc("/api/v1/generate", generate)
 	r.HandleFunc("/api/v1/generate/{id}", generatePoll)
-	r.HandleFunc("/api/v1/Img/{id}", Img)
+	r.HandleFunc("/api/v1/img/{id}.png", Img)
 	r.HandleFunc("/", index)
 
 	log.Println("Listening on :3000...")
@@ -109,16 +114,35 @@ func callGenerator(job Image) {
 			}
 		}
 
-		err = saveOutput(img, fmt.Sprintf("%s/%s", outDir, imgName))
-		if err != nil {
-			log.Println(err)
-			return
-		}
+		if img.Bounds().Max.X > 200 && img.Bounds().Max.Y > 200 {
+			b := img.Bounds()
+			m := image.NewRGBA(image.Rect(0, 0, b.Dx(), b.Dy()))
+			draw.Draw(m, m.Bounds(), img, b.Min, draw.Src)
+			addLabel(m, img.Bounds().Max.X-125, img.Bounds().Max.Y-5, "Triangulate.xyz")
 
-		err = saveOutput(img, fmt.Sprintf("%s/%s", sourceDir, imgName))
-		if err != nil {
-			log.Println(err)
-			return
+			err = saveOutput(m, fmt.Sprintf("%s/%s", outDir, imgName))
+			if err != nil {
+				log.Println(err)
+				return
+			}
+
+			err = saveOutput(m, fmt.Sprintf("%s/%s", sourceDir, imgName))
+			if err != nil {
+				log.Println(err)
+				return
+			}
+		} else {
+			err = saveOutput(img, fmt.Sprintf("%s/%s", outDir, imgName))
+			if err != nil {
+				log.Println(err)
+				return
+			}
+
+			err = saveOutput(img, fmt.Sprintf("%s/%s", sourceDir, imgName))
+			if err != nil {
+				log.Println(err)
+				return
+			}
 		}
 
 		mutex.Lock()
@@ -191,4 +215,17 @@ func RandStringRunes(n int) string {
 		b[i] = letterRunes[rand.Intn(len(letterRunes))]
 	}
 	return string(b)
+}
+
+func addLabel(img *image.RGBA, x, y int, label string) {
+	col := color.RGBA{255, 255, 255, 255}
+	point := fixed.Point26_6{fixed.Int26_6(x * 64), fixed.Int26_6(y * 64)}
+
+	d := &font.Drawer{
+		Dst:  img,
+		Src:  image.NewUniform(col),
+		Face: basicfont.Face7x13,
+		Dot:  point,
+	}
+	d.DrawString(label)
 }

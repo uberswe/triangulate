@@ -21,7 +21,7 @@ func GenerateImage(img image.Image, width int, height int, stroke bool, StrokeTh
 		}
 	}
 
-	totalCycleCount := 500 * blurAmount
+	totalCycleCount := 20 * ((blurAmount * blurAmount) * 10)
 
 	s := generator.Generate(img, generator.UserParams{
 		StrokeRatio:              0.25 * float64(StrokeThickness),
