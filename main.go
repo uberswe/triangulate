@@ -133,10 +133,12 @@ func callGenerator(job Image) {
 			}
 		}
 
-		err = saveOutput(job.Image, fmt.Sprintf("%s/%s", sourceDir, imgName))
-		if err != nil {
-			log.Println(err)
-			return
+		if job.Image != nil {
+			err = saveOutput(job.Image, fmt.Sprintf("%s/%s", sourceDir, imgName))
+			if err != nil {
+				log.Println(err)
+				return
+			}
 		}
 
 		mutex.Lock()

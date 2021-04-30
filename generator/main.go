@@ -24,11 +24,10 @@ package generator
 // OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 import (
+	"github.com/fogleman/gg"
 	"image"
 	"image/color"
 	"math/rand"
-
-	"github.com/fogleman/gg"
 )
 
 type UserParams struct {
@@ -77,6 +76,19 @@ func Generate(source image.Image, userParams UserParams) *Image {
 }
 
 func (s *Image) Update() {
+
+	//in, err := os.Open("./svgs/cogwheel-gear-svgrepo-com.svg")
+	//if err != nil {
+	//	panic(err)
+	//}
+	//defer in.Close()
+	//
+	//out, err := os.Create("out.png")
+	//if err != nil {
+	//	panic(err)
+	//}
+	//defer out.Close()
+
 	rndX := rand.Float64() * float64(s.sourceWidth)
 	rndY := rand.Float64() * float64(s.sourceHeight)
 	r, g, b := rgb255(s.source.At(int(rndX), int(rndY)))
@@ -94,6 +106,13 @@ func (s *Image) Update() {
 	}
 	s.dc.DrawRegularPolygon(edges, destX, destY, s.strokeSize, rotation)
 	s.dc.FillPreserve()
+
+	//icon, _ := oksvg.ReadIconStream(in)
+	//icon.SetTarget(0, 0, s.strokeSize, s.strokeSize)
+	//rgba := image.NewRGBA(image.Rect(0, 0, int(s.strokeSize), int(s.strokeSize)))
+	//icon.Draw(rasterx.NewDasher(int(s.strokeSize), int(s.strokeSize), rasterx.NewScannerGV(int(s.strokeSize), int(s.strokeSize), rgba, rgba.Bounds())), s.InitialAlpha)
+	//
+	//s.dc.DrawImage(rgba, int(destX), int(destY))
 
 	if s.strokeSize <= s.StrokeInversionThreshold*s.initialStrokeSize {
 		if (r+g+b)/3 < 128 {
