@@ -24,10 +24,17 @@ package generator
 // OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 import (
+	"fmt"
 	"github.com/fogleman/gg"
+	"github.com/srwiley/rasterx"
+	"github.com/uberswe/oksvg"
 	"image"
 	"image/color"
+	"io/ioutil"
+	"log"
 	"math/rand"
+	"os"
+	"time"
 )
 
 type UserParams struct {
@@ -48,6 +55,7 @@ type UserParams struct {
 
 type Image struct {
 	UserParams
+	icons             []oksvg.SvgIcon
 	source            image.Image
 	dc                *gg.Context
 	sourceWidth       int
@@ -72,23 +80,36 @@ func Generate(source image.Image, userParams UserParams) *Image {
 
 	s.source = source
 	s.dc = canvas
+
+	files, err := ioutil.ReadDir("./svgs/")
+	if err != nil {
+		log.Fatal(err)
+	}
+	for _, f := range files {
+		fmt.Println(f.Name())
+		in, err := os.Open("./svgs/" + f.Name())
+		if err != nil {
+			log.Println(err)
+			return s
+		}
+		icon, err := oksvg.ReadIconStream(in)
+		if err != nil {
+			log.Println(err)
+			return s
+		}
+		if s.icons == nil {
+			s.icons = []oksvg.SvgIcon{}
+		}
+		s.icons = append(s.icons, *icon)
+		in.Close()
+	}
+
 	return s
 }
 
 func (s *Image) Update() {
-
-	//in, err := os.Open("./svgs/cogwheel-gear-svgrepo-com.svg")
-	//if err != nil {
-	//	panic(err)
-	//}
-	//defer in.Close()
-	//
-	//out, err := os.Create("out.png")
-	//if err != nil {
-	//	panic(err)
-	//}
-	//defer out.Close()
-
+	rand.Seed(int64(time.Now().Nanosecond()))
+	n := rand.Intn(len(s.icons) + 1)
 	rndX := rand.Float64() * float64(s.sourceWidth)
 	rndY := rand.Float64() * float64(s.sourceHeight)
 	r, g, b := rgb255(s.source.At(int(rndX), int(rndY)))
@@ -99,32 +120,55 @@ func (s *Image) Update() {
 	destY += float64(randRange(s.StrokeJitter))
 	edges := s.MinEdgeCount + rand.Intn(s.MaxEdgeCount-s.MinEdgeCount+1)
 
-	s.dc.SetRGBA255(r, g, b, int(s.InitialAlpha))
-	rotation := s.RotationSeed
-	if s.RandomRotation {
-		rotation = rotation + rand.Float64()
-	}
-	s.dc.DrawRegularPolygon(edges, destX, destY, s.strokeSize, rotation)
-	s.dc.FillPreserve()
-
-	//icon, _ := oksvg.ReadIconStream(in)
-	//icon.SetTarget(0, 0, s.strokeSize, s.strokeSize)
-	//rgba := image.NewRGBA(image.Rect(0, 0, int(s.strokeSize), int(s.strokeSize)))
-	//icon.Draw(rasterx.NewDasher(int(s.strokeSize), int(s.strokeSize), rasterx.NewScannerGV(int(s.strokeSize), int(s.strokeSize), rgba, rgba.Bounds())), s.InitialAlpha)
-	//
-	//s.dc.DrawImage(rgba, int(destX), int(destY))
-
-	if s.strokeSize <= s.StrokeInversionThreshold*s.initialStrokeSize {
-		if (r+g+b)/3 < 128 {
-			s.dc.SetRGBA255(255, 255, 255, int(s.InitialAlpha*2))
-		} else {
-			s.dc.SetRGBA255(0, 0, 0, int(s.InitialAlpha*2))
+	if n < len(s.icons) {
+		lineColor := color.NRGBA{
+			R: 255,
+			G: 255,
+			B: 255,
+			A: uint8(s.InitialAlpha * 2),
 		}
-	}
-	if s.Stroke {
-		s.dc.Stroke()
+		fillColor := color.NRGBA{
+			R: uint8(r),
+			G: uint8(g),
+			B: uint8(b),
+			A: uint8(s.InitialAlpha),
+		}
+		for i, ic := range s.icons {
+
+			if n == i {
+				ic.SetTarget(0, 0, s.strokeSize, s.strokeSize)
+				for i, _ := range ic.SVGPaths {
+					ic.SVGPaths[i].SetLineColor(lineColor)
+					ic.SVGPaths[i].SetFillColor(fillColor)
+				}
+				rgba := image.NewRGBA(image.Rect(0, 0, int(s.strokeSize), int(s.strokeSize)))
+				scanner := rasterx.NewScannerGV(int(s.strokeSize), int(s.strokeSize), rgba, rgba.Bounds())
+				ic.Draw(rasterx.NewDasher(int(s.strokeSize), int(s.strokeSize), scanner), s.InitialAlpha)
+				s.dc.DrawImage(rgba, int(destX), int(destY))
+			}
+
+		}
 	} else {
-		s.dc.ClearPath()
+		s.dc.SetRGBA255(r, g, b, int(s.InitialAlpha))
+		rotation := s.RotationSeed
+		if s.RandomRotation {
+			rotation = rotation + rand.Float64()
+		}
+		s.dc.DrawRegularPolygon(edges, destX, destY, s.strokeSize, rotation)
+		s.dc.FillPreserve()
+
+		if s.strokeSize <= s.StrokeInversionThreshold*s.initialStrokeSize {
+			if (r+g+b)/3 < 128 {
+				s.dc.SetRGBA255(255, 255, 255, int(s.InitialAlpha*2))
+			} else {
+				s.dc.SetRGBA255(0, 0, 0, int(s.InitialAlpha*2))
+			}
+		}
+		if s.Stroke {
+			s.dc.Stroke()
+		} else {
+			s.dc.ClearPath()
+		}
 	}
 
 	s.strokeSize -= s.StrokeReduction * s.strokeSize
