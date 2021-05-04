@@ -22,12 +22,13 @@ import (
 )
 
 var (
-	sourceDir = "resources/source"
-	outDir    = "resources/out"
-	queue     []string
-	images    map[string]Image
-	mutex     = &sync.Mutex{}
-	jobChan   = make(chan Image, 999999)
+	sourceDir  = "resources/source"
+	outDir     = "resources/out"
+	queue      []string
+	images     map[string]Image
+	mutex      = &sync.Mutex{}
+	jobChan    = make(chan Image, 999999)
+	currentJob Image
 )
 
 func worker(jobChan <-chan Image) {
@@ -81,21 +82,58 @@ func callGenerator(job Image) {
 	i := indexOf(job.Identifier, queue)
 	if i > -1 {
 		queue = append(queue[:i], queue[i+1:]...)
+		currentJob = job
 	}
 	mutex.Unlock()
 	if i > -1 {
+		log.Println("image generation started")
+		wireframe := 0
+		if job.TriangulateWireframe {
+			wireframe = 1
+		}
+		noise := 0
+		if job.TriangulateNoise {
+
+		}
 		p := &triangle.Processor{
-			BlurRadius:      job.BlurAmount,
-			SobelThreshold:  10,
-			PointsThreshold: 20,
-			MaxPoints:       2500,
-			Wireframe:       0,
-			Noise:           0,
-			StrokeWidth:     1,
-			Grayscale:       false,
+			BlurRadius:      job.ComplexityAmount,
+			SobelThreshold:  job.SobelThreshold,
+			PointsThreshold: job.PointsThreshold,
+			MaxPoints:       job.MaxPoints,
+			Wireframe:       wireframe,
+			Noise:           noise,
+			StrokeWidth:     float64(job.StrokeThickness),
+			Grayscale:       job.TriangulateGrayscale,
 		}
 		tri := triangle.Image{Processor: *p}
 		img := job.Image
+		if img == nil {
+			var source UnsplashRandomImageResponse
+			img, source, err = loadRandomUnsplashImage(job.Width, job.Height)
+			if err != nil {
+				log.Println(err)
+				return
+			}
+			if currentJob.Identifier == job.Identifier {
+				mutex.Lock()
+				currentJob.RandomImage = true
+				currentJob.Thumbnail = source.Urls.Thumb
+				currentJob.Description = source.Description
+				currentJob.UserName = source.User.Name
+				currentJob.UserLocation = source.User.Location
+				currentJob.UserLink = source.User.Links.HTML
+				mutex.Unlock()
+			}
+		}
+
+		if img != nil {
+			err = saveOutput(img, fmt.Sprintf("%s/%s", sourceDir, imgName))
+			if err != nil {
+				log.Println(err)
+				return
+			}
+		}
+
 		if job.Triangulate && job.TriangulateBefore {
 			img, _, _, err = tri.Draw(img, nil, triangulate)
 			if err != nil {
@@ -104,7 +142,7 @@ func callGenerator(job Image) {
 			}
 		}
 		if job.Shapes || (!job.Shapes && !job.Triangulate) {
-			img = GenerateImage(img, job.Width, job.Height, job.ShapesStroke, job.StrokeThickness, job.BlurAmount, job.Min, job.Max)
+			img = GenerateImage(img, job.Width, job.Height, job.ShapesStroke, job.StrokeThickness, job.ComplexityAmount, job.Min, job.Max)
 		}
 		if job.Triangulate && !job.TriangulateBefore {
 			img, _, _, err = tri.Draw(img, nil, triangulate)
@@ -133,19 +171,13 @@ func callGenerator(job Image) {
 			}
 		}
 
-		if job.Image != nil {
-			err = saveOutput(job.Image, fmt.Sprintf("%s/%s", sourceDir, imgName))
-			if err != nil {
-				log.Println(err)
-				return
-			}
-		}
-
+		log.Println("image generated")
 		mutex.Lock()
 		job.FileName = imgName
 		images[job.Identifier] = job
 		mutex.Unlock()
 	}
+
 }
 
 func triangulate() {

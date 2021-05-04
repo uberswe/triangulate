@@ -113,9 +113,15 @@ func generate(w http.ResponseWriter, r *http.Request) {
 	triangulate := r.FormValue("triangulate")
 	triangulateBefore := r.FormValue("triangulateBefore")
 	strokeThickness := r.FormValue("strokeThickness")
-	blurAmount := r.FormValue("blurAmount")
+	complexityAmount := r.FormValue("complexityAmount")
 	min := r.FormValue("min")
 	max := r.FormValue("max")
+	maxPoints := r.FormValue("maxPoints")
+	pointsThreshold := r.FormValue("pointsThreshold")
+	sobelThreshold := r.FormValue("sobelThreshold")
+	triangulateWireframe := r.FormValue("triangulateWireframe")
+	triangulateNoise := r.FormValue("triangulateNoise")
+	triangulateGrayscale := r.FormValue("triangulateGrayscale")
 
 	wi, err := strconv.Atoi(width)
 	if err != nil {
@@ -166,6 +172,27 @@ func generate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	triangulateNoiseBool, err := strconv.ParseBool(triangulateNoise)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+
+	triangulateWireframeBool, err := strconv.ParseBool(triangulateWireframe)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+
+	triangulateGrayscaleBool, err := strconv.ParseBool(triangulateGrayscale)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+
 	strokeThicknessInt, err := strconv.Atoi(strokeThickness)
 	if err != nil {
 		log.Println(err)
@@ -173,7 +200,7 @@ func generate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	blurAmountInt, err := strconv.Atoi(blurAmount)
+	complexityAmountInt, err := strconv.Atoi(complexityAmount)
 	if err != nil {
 		log.Println(err)
 		http.Error(w, http.StatusText(500), 500)
@@ -194,7 +221,28 @@ func generate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if wi > 1200 || hi > 1200 {
+	maxPointsInt, err := strconv.Atoi(maxPoints)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+
+	pointsThresholdInt, err := strconv.Atoi(pointsThreshold)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+
+	sobelThresholdInt, err := strconv.Atoi(sobelThreshold)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+
+	if wi > 2000 || hi > 2000 {
 		http.Error(w, "max size is 1200x1200", 500)
 		return
 	}
@@ -209,13 +257,32 @@ func generate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if blurAmountInt > 10 || blurAmountInt < 1 {
-		http.Error(w, "blur invalid", 500)
+	if complexityAmountInt > 100 || complexityAmountInt < 1 {
+		http.Error(w, "complexity invalid", 500)
 		return
 	}
 
 	if strokeThicknessInt > 10 || strokeThicknessInt < 1 {
+		log.Println(strokeThickness)
 		http.Error(w, "stroke invalid", 500)
+		return
+	}
+
+	if maxPointsInt > 5000 || maxPointsInt < 500 {
+		log.Println(maxPoints)
+		http.Error(w, "max points invalid", 500)
+		return
+	}
+
+	if pointsThresholdInt > 30 || pointsThresholdInt < 10 {
+		log.Println(pointsThreshold)
+		http.Error(w, "point threshold invalid", 500)
+		return
+	}
+
+	if sobelThresholdInt > 20 || sobelThresholdInt < 5 {
+		log.Println(sobelThresholdInt)
+		http.Error(w, "sobel threshold invalid", 500)
 		return
 	}
 
@@ -233,19 +300,26 @@ func generate(w http.ResponseWriter, r *http.Request) {
 		Identifier: id,
 		Timestamp:  time.Now(),
 		// TODO if we run this behind a load balancer the IP will be local so we have to adapt
-		RequestIP:         ip,
-		Width:             wi,
-		Height:            hi,
-		ImageType:         imageType,
-		Shapes:            shapesBool,
-		Max:               maxInt,
-		Min:               minInt,
-		BlurAmount:        blurAmountInt,
-		StrokeThickness:   strokeThicknessInt,
-		Triangulate:       triangulateBool,
-		TriangulateBefore: triangulateBeforeBool,
-		ShapesStroke:      shapesStrokeBool,
-		Image:             img,
+		// TODO hash the IP so we don't store PII
+		RequestIP:            ip,
+		Width:                wi,
+		Height:               hi,
+		ImageType:            imageType,
+		Shapes:               shapesBool,
+		Max:                  maxInt,
+		Min:                  minInt,
+		ComplexityAmount:     complexityAmountInt,
+		StrokeThickness:      strokeThicknessInt,
+		Triangulate:          triangulateBool,
+		TriangulateBefore:    triangulateBeforeBool,
+		ShapesStroke:         shapesStrokeBool,
+		Image:                img,
+		MaxPoints:            maxPointsInt,
+		SobelThreshold:       sobelThresholdInt,
+		PointsThreshold:      pointsThresholdInt,
+		TriangulateWireframe: triangulateWireframeBool,
+		TriangulateGrayscale: triangulateGrayscaleBool,
+		TriangulateNoise:     triangulateNoiseBool,
 	}
 	jobChan <- job
 	mutex.Unlock()
@@ -290,14 +364,22 @@ func generatePoll(w http.ResponseWriter, r *http.Request) {
 	res := ""
 	id := vars["id"]
 	i := indexOf(id, queue)
+	resp := GeneratePollResponse{
+		Queue: i + 1,
+	}
 	if i == -1 {
 		if _, ok := images[id]; ok {
 			res = fmt.Sprintf("/api/v1/img/%s.png", id)
+			resp.Link = res
 		}
-	}
-	resp := GeneratePollResponse{
-		Queue: i + 1,
-		Link:  res,
+		if currentJob.Identifier == id && currentJob.RandomImage {
+			resp.Thumbnail = currentJob.Thumbnail
+			resp.Description = currentJob.Description
+			resp.RandomImage = currentJob.RandomImage
+			resp.UserLocation = currentJob.UserLocation
+			resp.UserName = currentJob.UserName
+			resp.UserLink = currentJob.UserLink
+		}
 	}
 	mutex.Unlock()
 	err := json.NewEncoder(w).Encode(resp)

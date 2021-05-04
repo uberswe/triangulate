@@ -1,9 +1,8 @@
-import './App.css';
+import './App.scss';
 import React from "react";
 import Title from "./components/Title";
-import {Button, Col, Container, Form, Image, Row} from "react-bootstrap";
+import {Button, Col, Container, Form, Image, Row, Card} from "react-bootstrap";
 import axios from "axios"
-import 'bootstrap/dist/css/bootstrap.min.css';
 
 class App extends React.Component {
     constructor(props) {
@@ -22,11 +21,23 @@ class App extends React.Component {
             triangulate: false,
             triangulateBefore: false,
             strokeThickness: 5,
-            blurAmount: 5,
+            complexityAmount: 50,
             min: 4,
             max: 4,
             imageType: "random",
-            filesUpload: null
+            filesUpload: null,
+            maxPoints: 2500,
+            pointsThreshold: 20,
+            sobelThreshold: 10,
+            triangulateWireframe: false,
+            triangulateNoise: false,
+            triangulateGrayscale: false,
+            randomImage: false,
+            thumbnail: "",
+            user_link: "",
+            user_location: "",
+            user_name: "",
+            dots: "."
         };
 
         this.handleInputChange = this.handleInputChange.bind (this);
@@ -52,14 +63,14 @@ class App extends React.Component {
                 value = this.state.max;
             }
         } else if (name === "width") {
-            if (value > 1200) {
-                value = 1200;
+            if (value > 2000) {
+                value = 2000;
             } else if (value < 0) {
                 value = 0;
             }
         } else if (name === "height") {
-            if (value > 1200) {
-                value = 1200;
+            if (value > 2000) {
+                value = 2000;
             } else if (value < 0) {
                 value = 0;
             }
@@ -88,17 +99,34 @@ class App extends React.Component {
                     queue: result.data.queue,
                     image: result.data.link
                 });
+                if (result.data.randomImage) {
+                    this.setState({
+                        randomImage: true,
+                        description: result.data.description,
+                        thumbnail: result.data.thumbnail,
+                        user_link: result.data.user_link,
+                        user_location: result.data.user_location,
+                        user_name: result.data.user_name,
+                    })
+                }
+                this.setState({
+                    dots: this.state.dots + "."
+                })
                 if (this.state.image !== "") {
+                    this.setState({
+                        dots: "."
+                    })
                     clearInterval (this.state.timer)
                     this.setState ({
                         isLoading: false
                     });
                 }
             }).catch (error => {
-                console.log (error)
+                alert(error)
                 clearInterval (this.state.timer)
                 this.setState ({
-                    isLoading: false
+                    isLoading: false,
+                    dots: "."
                 });
             });
         }, 1000);
@@ -106,7 +134,8 @@ class App extends React.Component {
 
     toggleButtonState = () => {
         this.setState ({
-            isLoading: true
+            isLoading: true,
+            randomImage: false,
         });
         let fdata = new FormData ();
         if (this.state.filesUpload != null) {
@@ -123,9 +152,15 @@ class App extends React.Component {
             triangulate: this.state.triangulate,
             triangulateBefore: this.state.triangulateBefore,
             strokeThickness: this.state.strokeThickness,
-            blurAmount: this.state.blurAmount,
+            complexityAmount: this.state.complexityAmount,
             min: this.state.min,
             max: this.state.max,
+            maxPoints: this.state.maxPoints,
+            pointsThreshold: this.state.pointsThreshold,
+            sobelThreshold: this.state.sobelThreshold,
+            triangulateWireframe: this.state.triangulateWireframe,
+            triangulateNoise: this.state.triangulateNoise,
+            triangulateGrayscale: this.state.triangulateGrayscale,
         }
         for (const [key, value] of Object.entries (data)) {
             fdata.append (key, value)
@@ -153,9 +188,75 @@ class App extends React.Component {
         } else if (this.state.queue > 0) {
             queueHolder = <div>Rendering, you are {this.state.queue} in the queue.</div>
         } else if (this.state.queue === 0) {
-            queueHolder = <div>Rendering, your image is being generated.</div>
+            queueHolder = <div>Rendering, your image is being generated{this.state.dots}</div>
         }
-        let shapeOptions, shapeOptions2, shapeOptions3, shapeOptions4 = ""
+        let media = ""
+
+        if (this.state.randomImage) {
+            media = (<Card style={{ width: '18rem' }}>
+                <Card.Img variant="left" src={this.state.thumbnail}/>
+                <Card.Body>
+                    <Card.Title>Your random image</Card.Title>
+                    <Card.Text>
+                        {this.state.description}
+                        Photo by <a href={this.state.user_link}>{this.state.user_name}, {this.state.user_location}</a>
+                    </Card.Text>
+                </Card.Body>
+            </Card>)
+        }
+
+        let triangulateOptions, triangulateOptions2, triangulateOptions3, triangulateOptions4, triangulateOptions5, triangulateOptions6, triangulateOptions7, shapeOptions, shapeOptions2, shapeOptions3, shapeOptions4 = ""
+        if (this.state.triangulate) {
+            triangulateOptions = (<Col md={4}>
+                <Form.Group controlId="sobelThreshold">
+                    <Form.Label>Sobel Threshold</Form.Label>
+                    <Form.Control min="5" max="20" name="sobelThreshold" value={this.state.sobelThreshold}
+                                  onChange={this.handleInputChange} type="range"/>
+                </Form.Group>
+            </Col>);
+            triangulateOptions2 = (<Col md={4}>
+                <Form.Group controlId="pointsThreshold">
+                    <Form.Label>Points Threshold</Form.Label>
+                    <Form.Control min="10" max="30" name="pointsThreshold" value={this.state.pointsThreshold}
+                                  onChange={this.handleInputChange} type="range"/>
+                </Form.Group>
+            </Col>);
+            triangulateOptions3 = (<Col md={4}>
+                <Form.Group controlId="maxPoints">
+                    <Form.Label>Max Points</Form.Label>
+                    <Form.Control min="500" max="5000" name="maxPoints" value={this.state.maxPoints}
+                                  onChange={this.handleInputChange} type="range"/>
+                </Form.Group>
+            </Col>);
+            triangulateOptions4 = (<Col md={4}>
+                <Form.Group controlId="strokeWidth">
+                    <Form.Label>Stroke Width</Form.Label>
+                    <Form.Control min="1" max="10" name="strokeWidth" value={this.state.strokeWidth}
+                                  onChange={this.handleInputChange} type="range"/>
+                </Form.Group>
+            </Col>);
+            triangulateOptions5 = (<Col md={4}>
+                <Form.Group>
+                    <Form.Check checked={this.state.triangulateWireframe} onChange={this.handleInputChange}
+                                name="triangulateWireframe"
+                                label="Wireframe" type="checkbox" id={`wireframe`}/>
+                </Form.Group>
+            </Col>);
+            triangulateOptions6 = (<Col md={4}>
+                <Form.Group>
+                    <Form.Check checked={this.state.triangulateNoise} onChange={this.handleInputChange}
+                                name="triangulateNoise"
+                                label="Noise" type="checkbox" id={`noise`}/>
+                </Form.Group>
+            </Col>);
+            triangulateOptions7 = (<Col md={4}>
+                <Form.Group>
+                    <Form.Check checked={this.state.triangulateGrayscale} onChange={this.handleInputChange}
+                                name="triangulateGrayscale"
+                                label="Grayscale" type="checkbox" id={`grayscale`}/>
+                </Form.Group>
+            </Col>);
+        }
         if (this.state.shapes) {
             shapeOptions = (<Col md={4}>
                         <Row>
@@ -276,17 +377,24 @@ class App extends React.Component {
                                             label="Add Shapes" type="checkbox" id={`Shapes`}/>
                             </Form.Group>
                                 </Col>
+                                {triangulateOptions5}
+                                {triangulateOptions6}
+                                {triangulateOptions7}
+                                {shapeOptions4}
                                 {shapeOptions2}
                                 <Col md={4}>
-                                    <Form.Group controlId="BlurAmount">
-                                        <Form.Label>Blur amount</Form.Label>
-                                        <Form.Control min="1" max="10" name="blurAmount" value={this.state.blurAmount}
+                                    <Form.Group controlId="ComplexityAmount">
+                                        <Form.Label>Complexity</Form.Label>
+                                        <Form.Control min="1" max="100" name="complexityAmount" value={this.state.complexityAmount}
                                                       onChange={this.handleInputChange} type="range"/>
                                     </Form.Group>
                                 </Col>
                                 {shapeOptions}
                                 {shapeOptions3}
-                                {shapeOptions4}
+                                {triangulateOptions}
+                                {triangulateOptions2}
+                                {triangulateOptions3}
+                                {triangulateOptions4}
                             </Row>
                             <Form.Group>
                                 <Button
@@ -300,6 +408,12 @@ class App extends React.Component {
                 <Row>
                     <Col md={12}>
                         {queueHolder}
+                    </Col>
+                </Row>
+                <Row>
+                    <Col md={12}>
+                        <hr/>
+                        {media}
                     </Col>
                 </Row>
                 <Row>
