@@ -58,16 +58,22 @@ func Run() {
 		VaryBy:      &throttled.VaryBy{RemoteAddr: true},
 	}
 
-	r := mux.NewRouter()
+	staticRouter := mux.NewRouter()
 	fs := http.FileServer(http.Dir("./assets/build/static"))
-	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", fs))
-	r.HandleFunc("/api/v1/generate", generate)
-	r.HandleFunc("/api/v1/generate/{id}", generatePoll)
-	r.HandleFunc("/api/v1/img/{id}.png", Img)
-	r.HandleFunc("/", index)
+	staticRouter.PathPrefix("/").Handler(http.StripPrefix("/static/", fs))
+
+	apiRouter := mux.NewRouter()
+	apiRouter.HandleFunc("/api/v1/generate", generate)
+	apiRouter.HandleFunc("/api/v1/generate/{id}", generatePoll)
+	apiRouter.HandleFunc("/api/v1/img/{id}.png", Img)
+
+	r := mux.NewRouter()
+	r.PathPrefix("/api/v1/").Handler(httpRateLimiter.RateLimit(apiRouter))
+	r.PathPrefix("/static/").Handler(staticRouter)
+	r.PathPrefix("/").HandlerFunc(index)
 
 	log.Println("Listening on :3000...")
-	err = http.ListenAndServe(":3000", httpRateLimiter.RateLimit(r))
+	err = http.ListenAndServe(":3000", r)
 	if err != nil {
 		log.Fatal(err)
 	}
