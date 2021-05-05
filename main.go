@@ -14,6 +14,7 @@ import (
 	"image/draw"
 	"image/png"
 	"log"
+	"math"
 	"math/rand"
 	"net/http"
 	"os"
@@ -96,7 +97,7 @@ func callGenerator(job Image) {
 
 		}
 		p := &triangle.Processor{
-			BlurRadius:      job.ComplexityAmount,
+			BlurRadius:      int(math.Round(float64(job.ComplexityAmount/10))) + 1,
 			SobelThreshold:  job.SobelThreshold,
 			PointsThreshold: job.PointsThreshold,
 			MaxPoints:       job.MaxPoints,
@@ -122,6 +123,7 @@ func callGenerator(job Image) {
 				currentJob.UserName = source.User.Name
 				currentJob.UserLocation = source.User.Location
 				currentJob.UserLink = source.User.Links.HTML
+				currentJob.ThumbnailLink = source.Links.HTML
 				mutex.Unlock()
 			}
 		}

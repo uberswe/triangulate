@@ -379,6 +379,7 @@ func generatePoll(w http.ResponseWriter, r *http.Request) {
 			resp.UserLocation = currentJob.UserLocation
 			resp.UserName = currentJob.UserName
 			resp.UserLink = currentJob.UserLink
+			resp.ThumbnailLink = currentJob.ThumbnailLink
 		}
 	}
 	mutex.Unlock()

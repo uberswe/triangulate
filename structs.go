@@ -6,15 +6,16 @@ import (
 )
 
 type GeneratePollResponse struct {
-	Queue        int    `json:"queue"`
-	Link         string `json:"link"`
-	Identifier   string `json:"identifier"`
-	RandomImage  bool   `json:"randomImage"`
-	Thumbnail    string `json:"thumbnail"`
-	Description  string `json:"description"`
-	UserName     string `json:"user_name"`
-	UserLocation string `json:"user_location"`
-	UserLink     string `json:"user_link"`
+	Queue         int    `json:"queue"`
+	Link          string `json:"link"`
+	Identifier    string `json:"identifier"`
+	RandomImage   bool   `json:"randomImage"`
+	Thumbnail     string `json:"thumbnail"`
+	Description   string `json:"description"`
+	UserName      string `json:"user_name"`
+	UserLocation  string `json:"user_location"`
+	UserLink      string `json:"user_link"`
+	ThumbnailLink string `json:"image_link"`
 }
 
 type Image struct {
@@ -41,9 +42,10 @@ type Image struct {
 	TriangulateGrayscale bool
 	Image                image.Image
 	RandomImage          bool   `json:"randomImage"`
-	Thumbnail            string `json:"thumbnail,omitempty"`
-	Description          string `json:"description,omitempty"`
-	UserName             string `json:"user_name,omitempty"`
-	UserLocation         string `json:"user_location,omitempty"`
-	UserLink             string `json:"user_link,omitempty"`
+	Thumbnail            string `json:"thumbnail"`
+	Description          string `json:"description"`
+	UserName             string `json:"user_name"`
+	UserLocation         string `json:"user_location"`
+	UserLink             string `json:"user_link"`
+	ThumbnailLink        string `json:"image_link"`
 }

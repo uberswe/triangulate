@@ -37,7 +37,8 @@ class App extends React.Component {
             user_link: "",
             user_location: "",
             user_name: "",
-            dots: "."
+            dots: ".",
+            image_link: ""
         };
 
         this.handleInputChange = this.handleInputChange.bind (this);
@@ -107,6 +108,7 @@ class App extends React.Component {
                         user_link: result.data.user_link,
                         user_location: result.data.user_location,
                         user_name: result.data.user_name,
+                        image_link: result.data.image_link
                     })
                 }
                 this.setState({
@@ -193,15 +195,22 @@ class App extends React.Component {
         let media = ""
 
         if (this.state.randomImage) {
-            media = (<Card style={{ width: '18rem' }}>
-                <Card.Img variant="left" src={this.state.thumbnail}/>
-                <Card.Body>
-                    <Card.Title>Your random image</Card.Title>
-                    <Card.Text>
-                        {this.state.description}
-                        Photo by <a href={this.state.user_link}>{this.state.user_name}, {this.state.user_location}</a>
-                    </Card.Text>
-                </Card.Body>
+            media = (<Card style={{ width: '100%' }}>
+                <Row>
+                    <Col md={6}>
+                        <a href={this.state.image_link}><Card.Img style={{ height: '100%' }} src={this.state.thumbnail}/></a>
+                    </Col>
+                    <Col md={6}>
+                        <Card.Body>
+                            <Card.Title>Your random image</Card.Title>
+                            <Card.Text>
+                                {this.state.description}
+
+                                Photo by <a href={this.state.user_link}>{this.state.user_name}, {this.state.user_location}</a>
+                            </Card.Text>
+                        </Card.Body>
+                    </Col>
+                </Row>
             </Card>)
         }
 
@@ -410,16 +419,15 @@ class App extends React.Component {
                         {queueHolder}
                     </Col>
                 </Row>
-                <Row>
+                <Row style={{ 'margin-top':'20px' }}>
                     <Col md={12}>
-                        <hr/>
                         {media}
                     </Col>
                 </Row>
-                <Row>
+                <Row style={{ 'margin-bottom':'50px' }}>
                     <Col md={12}>
                         <hr/>
-                        Created by <a href="https://github.com/uberswe">Markus Tenghamn</a>
+                        Created by <a href="https://github.com/uberswe">Markus Tenghamn</a> | Contact <a href="mailto:markus@triangulate.xyz">markus@triangulate.xyz</a>
                         <hr/>
                         This project uses ideas and code from <a
                         href="https://github.com/esimov/triangle">github.com/esimov/triangle</a> and <a
