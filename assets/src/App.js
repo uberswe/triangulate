@@ -206,7 +206,7 @@ class App extends React.Component {
                             <Card.Text>
                                 {this.state.description}
 
-                                Photo by <a href={this.state.user_link}>{this.state.user_name}, {this.state.user_location}</a>
+                                Photo by <a href={this.state.user_link+"?utm_source=triangulate&utm_medium=referral"}>{this.state.user_name}</a> on <a href="https://unsplash.com/?utm_source=triangulate&utm_medium=referral">Unsplash</a>
                             </Card.Text>
                         </Card.Body>
                     </Col>
