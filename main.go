@@ -66,10 +66,16 @@ func Run() {
 	apiRouter.HandleFunc("/api/v1/generate", generate)
 	apiRouter.HandleFunc("/api/v1/generate/{id}", generatePoll)
 	apiRouter.HandleFunc("/api/v1/img/{id}.png", Img)
+	// asset-manifest.json
+	// robots.txt
 
 	r := mux.NewRouter()
 	r.PathPrefix("/api/v1/").Handler(httpRateLimiter.RateLimit(apiRouter))
 	r.PathPrefix("/static/").Handler(staticRouter)
+
+	fs2 := http.FileServer(http.Dir("./assets/build"))
+	r.Path("/robots.txt").Handler(fs2)
+	r.Path("/asset-manifest.json").Handler(fs2)
 	r.PathPrefix("/").HandlerFunc(index)
 
 	log.Println("Listening on :3000...")
