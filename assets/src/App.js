@@ -205,7 +205,7 @@ class App extends React.Component {
                             <Card.Title>Your random image</Card.Title>
                             <Card.Text>
                                 {this.state.description}
-
+                                <hr/>
                                 Photo by <a href={this.state.user_link+"?utm_source=triangulate&utm_medium=referral"}>{this.state.user_name}</a> on <a href="https://unsplash.com/?utm_source=triangulate&utm_medium=referral">Unsplash</a>
                             </Card.Text>
                         </Card.Body>
