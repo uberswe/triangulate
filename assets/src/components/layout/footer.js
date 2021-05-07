@@ -7,7 +7,7 @@ function Footer() {
         <Col md={12}>
             <hr/>
             Created by <a href="https://github.com/uberswe">Markus Tenghamn</a> | Contact <a
-            href="mailto:markus@triangulate.xyz">support@triangulate.xyz</a>
+            href="mailto:markus@triangulate.xyz?subject=Triangulate.xyz%3A%20Contact">support@triangulate.xyz</a>
             <br/>
             This project uses ideas and code from <a
             href="https://github.com/esimov/triangle">triangle</a> and <a

@@ -177,6 +177,12 @@ class Generator extends React.Component {
             });
             this.poll ()
         }).catch (error => {
+            alert(error)
+            clearInterval (this.state.timer)
+            this.setState ({
+                isLoading: false,
+                dots: "."
+            });
             console.log (error)
         });
     };
@@ -334,7 +340,7 @@ class Generator extends React.Component {
                                 <Row>
                                     <Col md={6}>
                                         <Form.Group>
-                                            <Form.Label column mb={12}>
+                                            <Form.Label>
                                                 An image is used as a starting point.
                                             </Form.Label>
                                             <div key={`inline-radio`} className="mb-12">

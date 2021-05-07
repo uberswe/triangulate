@@ -1,14 +1,21 @@
 package art
 
 import (
+	"encoding/gob"
 	"fmt"
 	"github.com/esimov/triangle"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/securecookie"
+	"github.com/gorilla/sessions"
+	"github.com/joho/godotenv"
+	"github.com/stripe/stripe-go/v72"
 	"github.com/throttled/throttled/v2"
 	"github.com/throttled/throttled/v2/store/memstore"
 	"golang.org/x/image/font"
 	"golang.org/x/image/font/basicfont"
 	"golang.org/x/image/math/fixed"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
 	"image"
 	"image/color"
 	"image/draw"
@@ -18,18 +25,31 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
+	"os/signal"
 	"sync"
+	"syscall"
 	"time"
 )
 
 var (
-	sourceDir  = "resources/source"
-	outDir     = "resources/out"
-	queue      []string
-	images     map[string]Image
-	mutex      = &sync.Mutex{}
-	jobChan    = make(chan Image, 999999)
-	currentJob Image
+	store            *sessions.CookieStore
+	sourceDir        = "resources/source"
+	outDir           = "resources/out"
+	queue            []string
+	images           map[string]Image
+	mutex            = &sync.Mutex{}
+	jobChan          = make(chan Image, 999999)
+	currentJob       Image
+	db               *gorm.DB
+	priceID          string
+	stripePrivateKey string
+	stripePublicKey  string
+	successUrl       string
+	cancelUrl        string
+	returnURL        string
+	webhookSecret    string
+	cookieName       string
+	sessionIDParam   string
 )
 
 func worker(jobChan <-chan Image) {
@@ -39,6 +59,74 @@ func worker(jobChan <-chan Image) {
 }
 
 func Run() {
+	closeHandler()
+
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
+	addr := os.Getenv("ADDR")
+	stripePrivateKey = os.Getenv("STRIPE_PRIVATE_KEY")
+	stripePublicKey = os.Getenv("STRIPE_PUBLIC_KEY")
+	successUrl = os.Getenv("SUCCESS_URL")
+	cancelUrl = os.Getenv("CANCEL_URL")
+	returnURL = os.Getenv("RETURN_URL")
+	webhookSecret = os.Getenv("WEBHOOK_SECRET")
+	priceID = os.Getenv("PRICE_ID")
+	cookieName = os.Getenv("COOKIE_NAME")
+	sessionIDParam = os.Getenv("SESSION_ID_PARAM")
+
+	stripe.Key = stripePrivateKey
+
+	db, err = gorm.Open(sqlite.Open("triangulate.db"), &gorm.Config{})
+	if err != nil {
+		log.Println(err)
+		log.Fatal("failed to connect database")
+	}
+
+	// Migrate the schema
+	err = db.AutoMigrate(&Image{})
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = db.AutoMigrate(&User{})
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = db.AutoMigrate(&Stat{})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	stat := Stat{}
+	if res := db.First(&stat, "key = ?", "total_generated"); res.Error != nil && res.Error != gorm.ErrRecordNotFound {
+		log.Fatal(res.Error)
+	}
+	if stat.ID == 0 {
+		stat.Key = "total_generated"
+		stat.Value = 0
+		res := db.Create(&stat)
+		if res.Error != nil {
+			log.Fatal(res.Error)
+		}
+	}
+
+	authKeyOne := securecookie.GenerateRandomKey(64)
+	encryptionKeyOne := securecookie.GenerateRandomKey(32)
+
+	store = sessions.NewCookieStore(
+		authKeyOne,
+		encryptionKeyOne,
+	)
+
+	store.Options = &sessions.Options{
+		MaxAge:   60 * 60 * 24 * 30, // 30 days
+		HttpOnly: true,
+	}
+
+	gob.Register(User{})
+
 	store, err := memstore.New(65536)
 	if err != nil {
 		log.Fatal(err)
@@ -63,9 +151,20 @@ func Run() {
 	staticRouter.PathPrefix("/").Handler(http.StripPrefix("/static/", fs))
 
 	apiRouter := mux.NewRouter()
+	apiRouter.HandleFunc("/api/v1/login", login)
+	apiRouter.HandleFunc("/api/v1/logout", logout)
+	apiRouter.HandleFunc("/api/v1/register", register)
+	apiRouter.HandleFunc("/api/v1/forgot-password", forgotPassword)
+	apiRouter.HandleFunc("/api/v1/reset-password/{code}", resetPassword)
+	apiRouter.HandleFunc("/api/v1/settings", settings)
+	apiRouter.HandleFunc("/api/v1/stripe/webhook", handleWebhook)
+	apiRouter.HandleFunc("/api/v1/auth/settings", authSettings)
+	apiRouter.HandleFunc("/api/v1/auth/generate", generate)
+	apiRouter.HandleFunc("/api/v1/auth/generate/{id}", generatePoll)
+	apiRouter.HandleFunc("/api/v1/auth/img/{id}.png", img)
 	apiRouter.HandleFunc("/api/v1/generate", generate)
 	apiRouter.HandleFunc("/api/v1/generate/{id}", generatePoll)
-	apiRouter.HandleFunc("/api/v1/img/{id}.png", Img)
+	apiRouter.HandleFunc("/api/v1/img/{id}.png", img)
 	// asset-manifest.json
 	// robots.txt
 
@@ -78,11 +177,38 @@ func Run() {
 	r.Path("/asset-manifest.json").Handler(fs2)
 	r.PathPrefix("/").HandlerFunc(index)
 
-	log.Println("Listening on :3000...")
-	err = http.ListenAndServe(":3000", r)
+	// TODO add
+	// X-Content-Type-Options: nosniff
+	// X-XSS-Protection: 1; mode=block
+	// Strict-Transport-Security: max-age=<seconds>[; includeSubDomains]
+	// Cache-control: no-store
+	// Pragma: no-cache
+	// X-Frame-Options: DENY
+	// generate does not appear to contain an anti-CSRF token
+
+	log.Printf("Listening on %s\n", addr)
+	err = http.ListenAndServe(addr, r)
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+func closeHandler() {
+	c := make(chan os.Signal)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-c
+		log.Println("Terminating via terminal")
+		d, err := db.DB()
+		if err != nil {
+			log.Fatal(err)
+		}
+		err = d.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
+		os.Exit(0)
+	}()
 }
 
 func callGenerator(job Image) {
@@ -187,6 +313,11 @@ func callGenerator(job Image) {
 
 		log.Println("image generated")
 		mutex.Lock()
+		stat := Stat{}
+		if res := db.First(&stat, "key = ?", "total_generated"); res.Error == nil {
+			stat.Value = stat.Value + 1
+			db.Save(&stat)
+		}
 		job.FileName = imgName
 		images[job.Identifier] = job
 		mutex.Unlock()

@@ -9,6 +9,8 @@ import Premium from "./components/pages/premium";
 import Footer from "./components/layout/footer";
 import Login from "./components/pages/login";
 import ForgotPassword from "./components/pages/forgot-password";
+import PrivacyPolicy from "./components/pages/privacy-policy";
+import TermsOfService from "./components/pages/terms-of-service";
 
 class App extends React.Component {
 
@@ -34,10 +36,10 @@ class App extends React.Component {
                             <p>Use this form to reset your password.</p>
                         </Route>
                         <Route path="/terms-of-service">
-                            <p>N/A</p>
+                            <TermsOfService/>
                         </Route>
                         <Route path="/privacy-policy">
-                            <p>N/A</p>
+                            <PrivacyPolicy/>
                         </Route>
                         <Route path="*">
                             <FourOhFour/>
