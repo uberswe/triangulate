@@ -7,7 +7,8 @@ function ForgotPassword() {
         <Col md={{span: 4, offset: 4}}>
             <h2>Forgot Password</h2>
             <Form>
-                <Form.Text>An email with a reset link will be sent to you if an account with that email exists.</Form.Text>
+                <Form.Text>An email with a reset link will be sent to you if an account with that email
+                    exists.</Form.Text>
                 <Form.Group controlId="formEmail">
                     <Form.Label>Email</Form.Label>
                     <Form.Control name={`email`} type="email" id="formEmail" autocomplete="on"/>

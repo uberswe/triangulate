@@ -2,7 +2,7 @@ import './App.scss';
 import React from "react";
 import Header from "./components/layout/header";
 import FourOhFour from "./components/pages/404";
-import {Container, Row} from "react-bootstrap";
+import {Container} from "react-bootstrap";
 import Generator from "./components/generator/generator";
 import {BrowserRouter as Router, Route, Switch} from "react-router-dom";
 import Premium from "./components/pages/premium";
@@ -28,6 +28,10 @@ class App extends React.Component {
                         </Route>
                         <Route path="/login">
                             <Login/>
+                        </Route>
+                        <Route path="/members">
+                            <p>Members area</p>
+                            <Generator/>
                         </Route>
                         <Route path="/forgot-password">
                             <ForgotPassword/>

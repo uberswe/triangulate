@@ -75,13 +75,13 @@ class Generator extends React.Component {
             }
         } else if (name === "triangulate") {
             if (!value && !this.state.shapes) {
-                this.setState({
+                this.setState ({
                     shapes: true
                 })
             }
         } else if (name === "shapes") {
             if (!value && !this.state.triangulate) {
-                this.setState({
+                this.setState ({
                     triangulate: true
                 })
             }
@@ -99,7 +99,7 @@ class Generator extends React.Component {
                     image: result.data.link
                 });
                 if (result.data.randomImage) {
-                    this.setState({
+                    this.setState ({
                         randomImage: true,
                         description: result.data.description,
                         thumbnail: result.data.thumbnail,
@@ -109,11 +109,11 @@ class Generator extends React.Component {
                         image_link: result.data.image_link
                     })
                 }
-                this.setState({
+                this.setState ({
                     dots: this.state.dots + "."
                 })
                 if (this.state.image !== "") {
-                    this.setState({
+                    this.setState ({
                         dots: "."
                     })
                     clearInterval (this.state.timer)
@@ -122,7 +122,7 @@ class Generator extends React.Component {
                     });
                 }
             }).catch (error => {
-                alert(error)
+                alert (error)
                 clearInterval (this.state.timer)
                 this.setState ({
                     isLoading: false,
@@ -177,7 +177,7 @@ class Generator extends React.Component {
             });
             this.poll ()
         }).catch (error => {
-            alert(error)
+            alert (error)
             clearInterval (this.state.timer)
             this.setState ({
                 isLoading: false,
@@ -204,10 +204,10 @@ class Generator extends React.Component {
         let media = ""
 
         if (this.state.randomImage) {
-            media = (<Card style={{ width: '100%' }}>
+            media = (<Card style={{width: '100%'}}>
                 <Row>
                     <Col md={6}>
-                        <a href={this.state.image_link}><Card.Img style={{ height: '100%' }} src={this.state.thumbnail}/></a>
+                        <a href={this.state.image_link}><Card.Img style={{height: '100%'}} src={this.state.thumbnail}/></a>
                     </Col>
                     <Col md={6}>
                         <Card.Body>
@@ -215,7 +215,9 @@ class Generator extends React.Component {
                             <Card.Text>
                                 {this.state.description}
                                 <hr/>
-                                Photo by <a href={this.state.user_link+"?utm_source=triangulate&utm_medium=referral"}>{this.state.user_name}</a> on <a href="https://unsplash.com/?utm_source=triangulate&utm_medium=referral">Unsplash</a>
+                                Photo by <a
+                                href={this.state.user_link + "?utm_source=triangulate&utm_medium=referral"}>{this.state.user_name}</a> on <a
+                                href="https://unsplash.com/?utm_source=triangulate&utm_medium=referral">Unsplash</a>
                             </Card.Text>
                         </Card.Body>
                     </Col>
@@ -223,7 +225,8 @@ class Generator extends React.Component {
             </Card>)
         }
 
-        let triangulateOptions, triangulateOptions2, triangulateOptions3, triangulateOptions4, triangulateOptions5, triangulateOptions6, triangulateOptions7, shapeOptions, shapeOptions2, shapeOptions3, shapeOptions4 = ""
+        let triangulateOptions, triangulateOptions2, triangulateOptions3, triangulateOptions4, triangulateOptions5,
+            triangulateOptions6, triangulateOptions7, shapeOptions, shapeOptions2, shapeOptions3, shapeOptions4 = ""
         if (this.state.triangulate) {
             triangulateOptions = (<Col md={4}>
                 <Form.Group controlId="sobelThreshold">

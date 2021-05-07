@@ -1,91 +1,136 @@
-package art
+package triangulate
 
 import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/uberswe/art/generator"
+	"github.com/esimov/triangle"
+	"github.com/uberswe/triangulate/generator"
+	"golang.org/x/image/font"
+	"golang.org/x/image/font/basicfont"
+	"golang.org/x/image/math/fixed"
 	"image"
+	"image/color"
+	"image/draw"
 	"log"
+	"math"
 	"math/rand"
 	"net/http"
 	"time"
 )
 
-var randomUnsplashImages []UnsplashRandomImageResponse
+func callGenerator(job Image) {
+	var err error
+	if images == nil {
+		images = map[string]Image{}
+	}
+	imgName := fmt.Sprintf("%d_%s.png", time.Now().UnixNano(), RandStringRunes(10))
+	mutex.Lock()
+	i := indexOf(job.Identifier, queue)
+	if i > -1 {
+		queue = append(queue[:i], queue[i+1:]...)
+		currentJob = job
+	}
+	mutex.Unlock()
+	if i > -1 {
+		log.Println("image generation started")
+		wireframe := 0
+		if job.TriangulateWireframe {
+			wireframe = 1
+		}
+		noise := 0
+		if job.TriangulateNoise {
 
-type UnsplashRandomImageResponse struct {
-	ID          string `json:"id"`
-	CreatedAt   string `json:"created_at"`
-	UpdatedAt   string `json:"updated_at"`
-	Width       int    `json:"width"`
-	Height      int    `json:"height"`
-	Color       string `json:"color"`
-	BlurHash    string `json:"blur_hash"`
-	Downloads   int    `json:"downloads"`
-	Likes       int    `json:"likes"`
-	LikedByUser bool   `json:"liked_by_user"`
-	Description string `json:"description"`
-	Exif        struct {
-		Make         string `json:"make"`
-		Model        string `json:"model"`
-		ExposureTime string `json:"exposure_time"`
-		Aperture     string `json:"aperture"`
-		FocalLength  string `json:"focal_length"`
-		Iso          int    `json:"iso"`
-	} `json:"exif"`
-	Location struct {
-		Name     string `json:"name"`
-		City     string `json:"city"`
-		Country  string `json:"country"`
-		Position struct {
-			Latitude  float64 `json:"latitude"`
-			Longitude float64 `json:"longitude"`
-		} `json:"position"`
-	} `json:"location"`
-	CurrentUserCollections []struct {
-		ID              int         `json:"id"`
-		Title           string      `json:"title"`
-		PublishedAt     string      `json:"published_at"`
-		LastCollectedAt string      `json:"last_collected_at"`
-		UpdatedAt       string      `json:"updated_at"`
-		CoverPhoto      interface{} `json:"cover_photo"`
-		User            interface{} `json:"user"`
-	} `json:"current_user_collections"`
-	Urls struct {
-		Raw     string `json:"raw"`
-		Full    string `json:"full"`
-		Regular string `json:"regular"`
-		Small   string `json:"small"`
-		Thumb   string `json:"thumb"`
-	} `json:"urls"`
-	Links struct {
-		Self             string `json:"self"`
-		HTML             string `json:"html"`
-		Download         string `json:"download"`
-		DownloadLocation string `json:"download_location"`
-	} `json:"links"`
-	User struct {
-		ID                string `json:"id"`
-		UpdatedAt         string `json:"updated_at"`
-		Username          string `json:"username"`
-		Name              string `json:"name"`
-		PortfolioURL      string `json:"portfolio_url"`
-		Bio               string `json:"bio"`
-		Location          string `json:"location"`
-		TotalLikes        int    `json:"total_likes"`
-		TotalPhotos       int    `json:"total_photos"`
-		TotalCollections  int    `json:"total_collections"`
-		InstagramUsername string `json:"instagram_username"`
-		TwitterUsername   string `json:"twitter_username"`
-		Links             struct {
-			Self      string `json:"self"`
-			HTML      string `json:"html"`
-			Photos    string `json:"photos"`
-			Likes     string `json:"likes"`
-			Portfolio string `json:"portfolio"`
-		} `json:"links"`
-	} `json:"user"`
+		}
+		p := &triangle.Processor{
+			BlurRadius:      int(math.Round(float64(job.ComplexityAmount/10))) + 1,
+			SobelThreshold:  job.SobelThreshold,
+			PointsThreshold: job.PointsThreshold,
+			MaxPoints:       job.MaxPoints,
+			Wireframe:       wireframe,
+			Noise:           noise,
+			StrokeWidth:     float64(job.StrokeThickness),
+			Grayscale:       job.TriangulateGrayscale,
+		}
+		tri := triangle.Image{Processor: *p}
+		img := job.Image
+		if img == nil {
+			var source UnsplashRandomImageResponse
+			img, source, err = loadRandomUnsplashImage(job.Width, job.Height)
+			if err != nil {
+				log.Println(err)
+				return
+			}
+			if currentJob.Identifier == job.Identifier {
+				mutex.Lock()
+				currentJob.RandomImage = true
+				currentJob.Thumbnail = source.Urls.Thumb
+				currentJob.Description = source.Description
+				currentJob.UserName = source.User.Name
+				currentJob.UserLocation = source.User.Location
+				currentJob.UserLink = source.User.Links.HTML
+				currentJob.ThumbnailLink = source.Links.HTML
+				mutex.Unlock()
+			}
+		}
+
+		if img != nil {
+			err = saveOutput(img, fmt.Sprintf("%s/%s", sourceDir, imgName))
+			if err != nil {
+				log.Println(err)
+				return
+			}
+		}
+
+		if job.Triangulate && job.TriangulateBefore {
+			img, _, _, err = tri.Draw(img, nil, triangulate)
+			if err != nil {
+				log.Println(err)
+				return
+			}
+		}
+		if job.Shapes || (!job.Shapes && !job.Triangulate) {
+			img = GenerateImage(img, job.Width, job.Height, job.ShapesStroke, job.StrokeThickness, job.ComplexityAmount, job.Min, job.Max)
+		}
+		if job.Triangulate && !job.TriangulateBefore {
+			img, _, _, err = tri.Draw(img, nil, triangulate)
+			if err != nil {
+				log.Println(err)
+				return
+			}
+		}
+
+		if img.Bounds().Max.X > 200 && img.Bounds().Max.Y > 200 {
+			b := img.Bounds()
+			m := image.NewRGBA(image.Rect(0, 0, b.Dx(), b.Dy()))
+			draw.Draw(m, m.Bounds(), img, b.Min, draw.Src)
+			addLabel(m, img.Bounds().Max.X-125, img.Bounds().Max.Y-5, "Triangulate.xyz")
+
+			err = saveOutput(m, fmt.Sprintf("%s/%s", outDir, imgName))
+			if err != nil {
+				log.Println(err)
+				return
+			}
+		} else {
+			err = saveOutput(img, fmt.Sprintf("%s/%s", outDir, imgName))
+			if err != nil {
+				log.Println(err)
+				return
+			}
+		}
+
+		log.Println("image generated")
+		mutex.Lock()
+		stat := Stat{}
+		if res := db.First(&stat, "key = ?", "total_generated"); res.Error == nil {
+			stat.Value = stat.Value + 1
+			db.Save(&stat)
+		}
+		job.FileName = imgName
+		images[job.Identifier] = job
+		mutex.Unlock()
+	}
+
 }
 
 func GenerateImage(img image.Image, width int, height int, stroke bool, StrokeThickness int, blurAmount int, shapeMin int, shapeMax int) image.Image {
@@ -160,4 +205,17 @@ func queueImages() {
 			randomUnsplashImages = append(randomUnsplashImages, r)
 		}
 	}
+}
+
+func addLabel(img *image.RGBA, x, y int, label string) {
+	col := color.RGBA{255, 255, 255, 255}
+	point := fixed.Point26_6{fixed.Int26_6(x * 64), fixed.Int26_6(y * 64)}
+
+	d := &font.Drawer{
+		Dst:  img,
+		Src:  image.NewUniform(col),
+		Face: basicfont.Face7x13,
+		Dot:  point,
+	}
+	d.DrawString(label)
 }

@@ -1,5 +1,5 @@
 import React from 'react'
-import {Row, Col, Form, Button} from "react-bootstrap"
+import {Button, Col, Form, Row} from "react-bootstrap"
 import axios from "axios";
 
 class Premium extends React.Component {
@@ -13,58 +13,65 @@ class Premium extends React.Component {
             password: ""
         };
 
-        this.buttonClick = this.buttonClick.bind(this);
+        this.buttonClick = this.buttonClick.bind (this);
+        this.onInputChange = this.onInputChange.bind (this);
+    }
+
+    onInputChange(event) {
+        this.setState ({
+            [event.target.name]: event.target.value
+        });
     }
 
     componentDidMount() {
-        const script = document.createElement("script");
+        const script = document.createElement ("script");
         script.src = "https://js.stripe.com/v3/";
         script.async = true;
-        script.onload = () => this.stripeLoaded();
+        script.onload = () => this.stripeLoaded ();
 
-        document.body.appendChild(script);
+        document.body.appendChild (script);
 
-        axios.get('/api/v1/settings').then (result => {
-            this.setState({
+        axios.get ('/api/v1/settings').then (result => {
+            this.setState ({
                 price_id: result.data.price_id,
                 stripe_key: result.data.stripe_key
             });
         }).catch (error => {
-            console.log(error)
+            console.log (error)
         });
     }
 
     stripeLoaded() {
-        this.setState({
-            stripe: Stripe(this.state.stripe_key)
+        this.setState ({
+            stripe: Stripe (this.state.stripe_key)
         })
     }
 
     buttonClick() {
-        let createCheckoutSession = function(priceId, email, password) {
-            return fetch("/api/v1/register", {
+        let createCheckoutSession = function (priceId, email, password) {
+            return fetch ("/api/v1/register", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify({
+                body: JSON.stringify ({
                     priceId: priceId,
                     email: email,
                     password: password
                 })
-            }).then(function(result) {
-                return result.json();
+            }).then (function (result) {
+                return result.json ();
             });
         };
 
         let premium = this;
 
-        createCheckoutSession(this.state.price_id, this.state.email, this.state.password).then(function(data) {
+        createCheckoutSession (this.state.price_id, this.state.email, this.state.password).then (function (data) {
             premium.state.stripe
-                .redirectToCheckout({
+                .redirectToCheckout ({
                     sessionId: data.sessionId
                 })
-                .then(handleResult);
+                .then (handleResult);
         });
     }
 
@@ -92,7 +99,8 @@ class Premium extends React.Component {
                 <Form>
                     <Form.Group controlId="formEmail">
                         <Form.Label>Email</Form.Label>
-                        <Form.Control name={`email`} type="email" id="formEmail" autocomplete="on"/>
+                        <Form.Control name={`email`} type="email" id="formEmail" autocomplete="on"
+                                      onChange={this.onInputChange} value={this.state.email}/>
                         <Form.Text>Your email is stored as a <a href="https://en.wikipedia.org/wiki/SHA-2"
                                                                 target="_blank">SHA-256</a> hash which is only used
                             during login or password reset requests.
@@ -101,7 +109,8 @@ class Premium extends React.Component {
                     </Form.Group>
                     <Form.Group controlId="formPassword">
                         <Form.Label>Password</Form.Label>
-                        <Form.Control name={`password`} type="password" id="formPassword" autocomplete="on"/>
+                        <Form.Control name={`password`} type="password" id="formPassword" autocomplete="on"
+                                      onChange={this.onInputChange} value={this.state.password}/>
                     </Form.Group>
                     <Form.Group>
                         <Button onClick={this.buttonClick} variant="primary">Pay 5 EUR/mo via Stripe</Button>

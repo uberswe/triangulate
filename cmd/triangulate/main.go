@@ -1,7 +1,7 @@
 package main
 
-import "github.com/uberswe/art"
+import "github.com/uberswe/triangulate"
 
 func main() {
-	art.Run()
+	triangulate.Run()
 }

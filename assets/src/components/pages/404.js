@@ -1,5 +1,5 @@
 import React from 'react'
-import {Row, Col, Badge} from "react-bootstrap"
+import {Badge, Col, Row} from "react-bootstrap"
 
 function FourOhFour() {
     return (<Row>
