@@ -233,8 +233,8 @@ func forgotPassword(w http.ResponseWriter, r *http.Request) {
 	}
 
 	passwordReset := PasswordReset{}
-	if res := db.First(&passwordReset, "user_id = ? AND expires_at > ?", user.ID, time.Now()); res.Error != nil || user.ID == 0 {
-		log.Println(res.Error)
+	if _ = db.First(&passwordReset, "user_id = ? AND expires_at > ?", user.ID, time.Now()); passwordReset.ID > 0 {
+		log.Println("Password reset link already sent")
 		// We don't want to disclose if the email exists or not
 		writeJSON(w, nil, 200)
 		return
