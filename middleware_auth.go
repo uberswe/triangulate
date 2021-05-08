@@ -16,10 +16,16 @@ func AuthMiddleware(next http.Handler) http.Handler {
 		if err != nil {
 			log.Println(err.Error())
 		} else {
+			log.Println("session")
 			if val, ok := gs.Values["session"]; ok {
+				log.Println("val")
 				if ses, ok := val.(Session); ok {
+					log.Println(ses.AuthSessionID)
+					log.Println(ses.TempSessionID)
+					log.Println(ses.StripeSessionID)
 					if ses.AuthSessionID != "" {
 						a := AuthSession{}
+						log.Println(ses.AuthSessionID)
 						if res := db.First(&a, "auth_session_id = ?", ses.AuthSessionID); res.Error == nil {
 							if a.ID > 0 {
 								ctx := context.WithValue(r.Context(), ContextUserKey, a.UserID)

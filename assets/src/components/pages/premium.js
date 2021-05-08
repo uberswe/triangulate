@@ -9,7 +9,8 @@ class Premium extends React.Component {
             stripe_key: this.props.stripe_key,
             stripe: null,
             email: "",
-            password: ""
+            password: "",
+            stripeAdded: false
         };
 
         this.buttonClick = this.buttonClick.bind (this);
@@ -22,19 +23,37 @@ class Premium extends React.Component {
         });
     }
 
-    componentDidMount() {
-        const script = document.createElement ("script");
-        script.src = "https://js.stripe.com/v3/";
-        script.async = true;
-        script.onload = () => this.stripeLoaded();
-
-        document.body.appendChild (script);
+    loadStripe(stripe_key) {
+        if (!this.state.stripeAdded && stripe_key !== "") {
+            this.setState ({
+                stripeAdded: true
+            })
+            const script = document.createElement ("script");
+            script.src = "https://js.stripe.com/v3/";
+            script.async = true;
+            script.onload = () => this.stripeLoaded(stripe_key);
+            document.body.appendChild (script);
+        }
     }
 
-    stripeLoaded() {
+    stripeLoaded(stripe_key) {
         this.setState ({
-            stripe: Stripe(this.state.stripe_key)
+            stripe: window.Stripe(stripe_key)
         })
+    }
+
+    componentDidMount() {
+        this.loadStripe(this.state.stripe_key)
+    }
+
+    componentDidUpdate(prevProps, prevState, snapshot) {
+        if (this.props !== prevProps) {
+            this.setState ({
+                price_id: this.props.price_id,
+                stripe_key: this.props.stripe_key,
+            })
+        }
+        this.loadStripe(this.state.stripe_key)
     }
 
     buttonClick() {
@@ -103,7 +122,7 @@ class Premium extends React.Component {
                                       onChange={this.onInputChange} value={this.state.password}/>
                     </Form.Group>
                     <Form.Group>
-                        <Button onClick={this.buttonClick} variant="primary">Pay 5 EUR/mo via Stripe</Button>
+                        <Button disabled={!this.state.stripe} onClick={this.buttonClick} variant="primary">Pay 5 EUR/mo via Stripe</Button>
                     </Form.Group>
                 </Form>
             </Col>

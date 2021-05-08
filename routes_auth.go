@@ -181,6 +181,10 @@ func register(w http.ResponseWriter, r *http.Request) {
 		TempSessionID:   tmp.SessionString,
 		StripeSessionID: s.ID,
 	}
+	gs.Options.Path = "/"
+	gs.Options.HttpOnly = true
+	gs.Options.SameSite = http.SameSiteStrictMode
+	gs.Options.Secure = secureCookies
 
 	err = gs.Save(r, w)
 	if err != nil {
@@ -218,6 +222,7 @@ func loginAndRedirect(user User, w http.ResponseWriter, r *http.Request) {
 		db.Create(&authSession)
 		if authSession.ID > 0 {
 			// set cookie
+			log.Println(sesID)
 			gs.Values["session"] = Session{
 				AuthSessionID: sesID,
 			}
