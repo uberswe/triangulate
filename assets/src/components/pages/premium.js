@@ -130,6 +130,12 @@ class Premium extends React.Component {
                     <li>Image sizes up to 10000x10000</li>
                     <li>No Triangulate.xyz watermark</li>
                 </ul>
+                <p>Here are some of the costs of running this website</p>
+                <ul>
+                    <li>40 EUR/mo - Dedicated server</li>
+                    <li>10 EUR/mo - Daily backups</li>
+                    <li>A few hours every month goes towards maintaining and updating this website</li>
+                </ul>
                 <p>Interested in something more? Contact me at <a
                     href="mailto:markus@triangulate.xyz?subject=Triangulate.xyz%3A%20More%20than%20premium">support@triangulate.xyz</a>.
                 </p>
