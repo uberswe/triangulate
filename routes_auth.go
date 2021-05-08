@@ -205,11 +205,104 @@ func register(w http.ResponseWriter, r *http.Request) {
 }
 
 func forgotPassword(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		writeJSONError(w, "", http.StatusMethodNotAllowed)
+		return
+	}
 
+	var req struct {
+		Email string `json:"email"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSONError(w, "", http.StatusInternalServerError)
+		log.Printf("json.NewDecoder.Decode: %v", err)
+		return
+	}
+
+	data := []byte(req.Email)
+	emailHash := sha256.Sum256(data)
+
+	user := User{}
+	if res := db.First(&user, "email_hash = ?", fmt.Sprintf("%x", emailHash[:])); res.Error != nil || user.ID == 0 {
+		log.Println(res.Error)
+		// We don't want to disclose if the email exists or not
+		writeJSON(w, nil, 200)
+		return
+	}
+
+	passwordReset := PasswordReset{
+		UserID: user.ID,
+		Code:   uuid.NewV4().String(),
+	}
+
+	if res := db.Create(&passwordReset); res.Error != nil || passwordReset.ID == 0 {
+		log.Println(res.Error)
+		writeJSONError(w, "", http.StatusInternalServerError)
+		return
+	}
+
+	go sendEmail(req.Email, "Triangulate.xyz Password Reset", fmt.Sprintf("Please use the following link to reset your password:\n\nhttps://%s/reset-password/%s/", domain, passwordReset.Code))
+	writeJSON(w, nil, 200)
 }
 
 func resetPassword(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		writeJSONError(w, "", http.StatusMethodNotAllowed)
+		return
+	}
 
+	var req struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+		Code     string `json:"code"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSONError(w, "", http.StatusInternalServerError)
+		log.Printf("json.NewDecoder.Decode: %v", err)
+		return
+	}
+
+	data := []byte(req.Email)
+	emailHash := sha256.Sum256(data)
+
+	user := User{}
+	if res := db.First(&user, "email_hash = ?", fmt.Sprintf("%x", emailHash[:])); res.Error != nil || user.ID == 0 {
+		log.Println(res.Error)
+		writeJSONError(w, "", http.StatusInternalServerError)
+		return
+	}
+
+	passwordReset := PasswordReset{}
+	if res := db.First(&passwordReset, "code = ?", req.Code); res.Error != nil || passwordReset.ID == 0 {
+		log.Println(res.Error)
+		writeJSONError(w, "", http.StatusInternalServerError)
+		return
+	}
+
+	if passwordReset.UserID != user.ID {
+		log.Println("password reset user does not match email")
+		writeJSONError(w, "", http.StatusInternalServerError)
+		return
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	if err != nil {
+		log.Println(err)
+		writeJSONError(w, "", http.StatusInternalServerError)
+		return
+	}
+
+	user.PasswordHash = string(hashedPassword)
+
+	if res := db.Save(&user); res.Error != nil {
+		log.Println(res.Error)
+		writeJSONError(w, "", http.StatusInternalServerError)
+		return
+	}
+
+	writeJSON(w, nil, 200)
 }
 
 func loginAndRedirect(user User, w http.ResponseWriter, r *http.Request) {

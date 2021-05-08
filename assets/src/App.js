@@ -14,6 +14,7 @@ import PrivacyPolicy from "./components/pages/privacy-policy";
 import TermsOfService from "./components/pages/terms-of-service";
 import Billing from "./components/pages/billing";
 import axios from "axios";
+import ResetPassword from "./components/pages/reset-password";
 
 class App extends React.Component {
     constructor(props) {
@@ -61,8 +62,8 @@ class App extends React.Component {
                         <Route path="/forgot-password">
                             <ForgotPassword/>
                         </Route>
-                        <Route path="/reset-password">
-                            <p>Use this form to reset your password.</p>
+                        <Route path="/reset-password/:code/">
+                            <ResetPassword/>
                         </Route>
                         <Route path="/terms-of-service">
                             <TermsOfService/>

@@ -45,6 +45,7 @@ func handleWebhook(w http.ResponseWriter, r *http.Request) {
 		// Store the status in your database and check when a user accesses your service.
 		// This approach helps you avoid hitting rate limits.
 	case "invoice.payment_failed":
+		// TODO cancel subscription and handle account termination
 		log.Println("The payment failed or the customer does not have a valid payment method. The subscription is now past due.")
 		log.Println(event.ID)
 		log.Println(event.Account)
@@ -52,6 +53,10 @@ func handleWebhook(w http.ResponseWriter, r *http.Request) {
 		// The payment failed or the customer does not have a valid payment method.
 		// The subscription becomes past_due. Notify your customer and send them to the
 		// customer portal to update their payment information.
+	case "customer.subscription.updated":
+		// TODO cancel subscription and handle account termination when subscription runs out
+	case "customer.subscription.deleted":
+		// TODO cancel subscription and handle account termination
 	default:
 		// unhandled event type
 		log.Println("Unhandled event type:")

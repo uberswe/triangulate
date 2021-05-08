@@ -18,10 +18,6 @@ func initDatabase() {
 	}
 
 	// Migrate the schema
-	err = db.AutoMigrate(&Image{})
-	if err != nil {
-		log.Fatal(err)
-	}
 	err = db.AutoMigrate(&User{})
 	if err != nil {
 		log.Fatal(err)

@@ -35,4 +35,10 @@ var (
 	unsplashAccessKey       string
 	workerCount             int
 	premiumWorkerCount      int
+	smtpUsername            string
+	smtpPassword            string
+	fromEmail               string
+	smtpHost                string
+	smtpPort                string
+	domain                  string
 )

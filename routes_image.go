@@ -1,6 +1,7 @@
 package triangulate
 
 import (
+	"crypto/sha256"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -122,6 +123,9 @@ func generate(w http.ResponseWriter, r *http.Request) {
 		writeJSONError(w, "", http.StatusInternalServerError)
 		return
 	}
+	// Hash the IP
+	hash := sha256.Sum256([]byte(ip))
+	ip = fmt.Sprintf("%x", hash)
 
 	shapesBool, err := strconv.ParseBool(shapes)
 	if err != nil {
@@ -270,8 +274,6 @@ func generate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Printf("Generate called from %s\n", ip)
-
 	mutex.Lock()
 	id := generateUniqueId(queue, 10)
 	queue = append(queue, id)
@@ -284,7 +286,6 @@ func generate(w http.ResponseWriter, r *http.Request) {
 		Identifier: id,
 		Timestamp:  time.Now(),
 		// TODO if we run this behind a load balancer the IP will be local so we have to adapt
-		// TODO hash the IP so we don't store PII
 		RequestIP:            ip,
 		Width:                wi,
 		Height:               hi,

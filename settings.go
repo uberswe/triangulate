@@ -33,6 +33,13 @@ func initSettings() {
 	sessionIDParam = os.Getenv("SESSION_ID_PARAM")
 	sessionAuthKey = os.Getenv("SESSION_AUTH_KEY")
 	sessionEncryptionKey = os.Getenv("SESSION_ENCRYPTION_KEY")
+	smtpUsername = os.Getenv("SMTP_USERNAME")
+	smtpPassword = os.Getenv("SMTP_PASSWORD")
+	fromEmail = os.Getenv("FROM_EMAIL")
+	smtpHost = os.Getenv("SMTP_HOST")
+	smtpPort = os.Getenv("SMTP_PORT")
+	domain = os.Getenv("DOMAIN")
+
 	workerCountString := os.Getenv("WORKER_COUNT")
 	workerCount, err = strconv.Atoi(workerCountString)
 	if err != nil {

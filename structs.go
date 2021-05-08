@@ -72,10 +72,17 @@ type Settings struct {
 	StripeKey string `json:"stripe_key"`
 }
 
+// TODO implement purging of sessions after x time
 type AuthSession struct {
 	gorm.Model
 	UserID        uint
 	AuthSessionID string
+}
+
+type PasswordReset struct {
+	gorm.Model
+	UserID uint
+	Code   string
 }
 
 type Session struct {

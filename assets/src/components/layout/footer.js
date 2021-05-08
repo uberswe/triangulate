@@ -14,6 +14,8 @@ function Footer() {
             href="https://github.com/preslavrachev/generative-art-in-go">generative-art-in-go</a>
             <br/>
             <Link to="/terms-of-service">Terms of service</Link> | <Link to="/privacy-policy">Privacy Policy</Link>
+            <br/>
+            <a href="https://github.com/uberswe/triangulate_xyz">Fork this project on Github</a>
         </Col>
     </Row>)
 }
