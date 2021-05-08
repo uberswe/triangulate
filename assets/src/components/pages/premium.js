@@ -2,6 +2,7 @@ import React from 'react'
 import {Alert, Button, Col, Form, Row} from "react-bootstrap"
 import { css } from "@emotion/core";
 import PulseLoader from "react-spinners/PulseLoader";
+import {Link} from "react-router-dom";
 
 class Premium extends React.Component {
     constructor(props) {
@@ -161,6 +162,7 @@ class Premium extends React.Component {
                     </Alert>
                     <Form.Group>
                         <Button disabled={!this.state.stripe || this.state.isLoading} onClick={this.buttonClick} variant="primary">{buttonText}</Button>
+                        <Form.Text>By registering you agree to the <Link to="/terms-of-service">Terms of service</Link> and <Link to="/privacy-policy">Privacy Policy</Link></Form.Text>
                     </Form.Group>
                 </Form>
             </Col>

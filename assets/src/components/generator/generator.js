@@ -399,16 +399,16 @@ class Generator extends React.Component {
                                         </Row>
                                     </Col>
                                 </Row>
-                                <Row>
-                                    <Col md={12}>
-                                        <Form.Group controlId="textGroup">
-                                            <Form.Label>Add text or leave this blank</Form.Label>
-                                            <Form.Control value={this.state.text}
-                                                          onChange={this.handleInputChange}
-                                                          name={`text`} type="Text"/>
-                                        </Form.Group>
-                                    </Col>
-                                </Row>
+                                {/*<Row>*/}
+                                {/*    <Col md={12}>*/}
+                                {/*        <Form.Group controlId="textGroup">*/}
+                                {/*            <Form.Label>Add text or leave this blank</Form.Label>*/}
+                                {/*            <Form.Control value={this.state.text}*/}
+                                {/*                          onChange={this.handleInputChange}*/}
+                                {/*                          name={`text`} type="Text"/>*/}
+                                {/*        </Form.Group>*/}
+                                {/*    </Col>*/}
+                                {/*</Row>*/}
                                 <Row>
                                     <Col md={4}>
                                         <Form.Group>
