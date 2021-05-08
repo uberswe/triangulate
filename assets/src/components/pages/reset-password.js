@@ -23,8 +23,9 @@ class ResetPassword extends React.Component {
 
 
     componentDidMount() {
+        const { code } = this.props.match.params
         this.setState({
-            code: this.props.match.params.code
+            code: code
         })
     }
 

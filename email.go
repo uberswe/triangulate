@@ -1,6 +1,7 @@
 package triangulate
 
 import (
+	"crypto/tls"
 	"fmt"
 	"github.com/jordan-wright/email"
 	"log"
@@ -13,7 +14,7 @@ func sendEmail(receiver string, subject string, content string) {
 	e.To = []string{receiver}
 	e.Subject = subject
 	e.Text = []byte(content)
-	err := e.Send(fmt.Sprintf("%s:%s", smtpHost, smtpPort), smtp.PlainAuth("", smtpUsername, smtpPassword, smtpHost))
+	err := e.SendWithTLS(fmt.Sprintf("%s:%s", smtpHost, smtpPort), smtp.PlainAuth("", smtpUsername, smtpPassword, smtpHost), &tls.Config{ServerName: smtpHost})
 	if err != nil {
 		log.Println(err)
 		return
