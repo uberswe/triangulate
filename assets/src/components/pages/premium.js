@@ -1,5 +1,7 @@
 import React from 'react'
 import {Button, Col, Form, Row} from "react-bootstrap"
+import { css } from "@emotion/core";
+import PulseLoader from "react-spinners/PulseLoader";
 
 class Premium extends React.Component {
     constructor(props) {
@@ -10,7 +12,8 @@ class Premium extends React.Component {
             stripe: null,
             email: "",
             password: "",
-            stripeAdded: false
+            stripeAdded: false,
+            isLoading: false,
         };
 
         this.buttonClick = this.buttonClick.bind (this);
@@ -57,6 +60,9 @@ class Premium extends React.Component {
     }
 
     buttonClick() {
+        this.setState({
+            isLoading: true
+        })
         let createCheckoutSession = function (priceId, email, password) {
             return fetch ("/api/v1/register", {
                 method: "POST",
@@ -70,6 +76,10 @@ class Premium extends React.Component {
                 })
             }).then (function (result) {
                 return result.json ();
+            }).catch(function (error) {
+                this.setState({
+                    isLoading: false
+                })
             });
         };
 
@@ -81,10 +91,17 @@ class Premium extends React.Component {
                     sessionId: data.sessionId
                 })
                 .then (window.handleResult);
+            this.setState({
+                isLoading: false
+            })
         });
     }
 
     render() {
+        let buttonText = "Pay 5 EUR/mo via Stripe"
+        if (this.state.isLoading) {
+            buttonText = (<PulseLoader color="#f7f7f7" loading={this.state.isLoading} size={10}/>)
+        }
         return (<Row>
             <Col md={6}>
                 <h2>Premium: 5 EUR/mo</h2>
@@ -122,7 +139,7 @@ class Premium extends React.Component {
                                       onChange={this.onInputChange} value={this.state.password}/>
                     </Form.Group>
                     <Form.Group>
-                        <Button disabled={!this.state.stripe} onClick={this.buttonClick} variant="primary">Pay 5 EUR/mo via Stripe</Button>
+                        <Button disabled={!this.state.stripe || this.state.isLoading} onClick={this.buttonClick} variant="primary">{buttonText}</Button>
                     </Form.Group>
                 </Form>
             </Col>

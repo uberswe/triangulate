@@ -1,6 +1,8 @@
 import {Button, Card, Col, Form, Image, Row} from "react-bootstrap";
 import React from "react";
 import axios from "axios";
+import { css } from "@emotion/core";
+import PulseLoader from "react-spinners/PulseLoader";
 
 class Generator extends React.Component {
     constructor(props) {
@@ -46,7 +48,7 @@ class Generator extends React.Component {
     onFileChange = event => {
         const files = Array.from (event.target.files)
         this.setState ({filesUpload: files});
-        console.log (this.state.filesUpload)
+        console.log(files)
     };
 
     handleInputChange(event) {
@@ -337,6 +339,11 @@ class Generator extends React.Component {
             </Form.Group>);
         }
 
+        var generateText = "Generate!"
+        if (this.state.isLoading) {
+            generateText = (<span>Generating... <PulseLoader color="#f7f7f7" loading={this.state.isLoading} size={10}/></span>)
+        }
+
         return (
             <Row>
                 <Col md={12}>
@@ -426,9 +433,9 @@ class Generator extends React.Component {
                                 </Row>
                                 <Form.Group>
                                     <Button
-                                        disabled={this.state.isLoading}
+                                        disabled={this.state.isLoading || ((this.state.filesUpload === null || this.state.filesUpload.length <= 0) && this.state.imageType === "upload")}
                                         onClick={this.toggleButtonState}
-                                        variant="primary">Generate!</Button>
+                                        variant="primary">{generateText}</Button>
                                 </Form.Group>
                             </Form>
                         </Col>

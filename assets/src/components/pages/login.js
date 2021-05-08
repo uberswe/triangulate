@@ -2,6 +2,8 @@ import React from 'react'
 import {Button, Col, Form, Row} from "react-bootstrap"
 import {Link} from "react-router-dom";
 import axios from "axios";
+import { css } from "@emotion/core";
+import PulseLoader from "react-spinners/PulseLoader";
 
 class Login extends React.Component {
     constructor(props) {
@@ -10,6 +12,7 @@ class Login extends React.Component {
         this.state = {
             email: "",
             password: "",
+            isLoading: false,
         };
 
         this.login = this.login.bind(this)
@@ -23,6 +26,9 @@ class Login extends React.Component {
     }
 
     login() {
+        this.setState({
+            isLoading: true
+        })
         const json = JSON.stringify({
             email: this.state.email,
             password: this.state.password,
@@ -34,13 +40,22 @@ class Login extends React.Component {
                 }
             },).then (result => {
                 window.location = result.request.responseURL
+            this.setState({
+                isLoading: false
+            })
         }).catch (error => {
             console.log (error)
+            this.setState({
+                isLoading: false
+            })
         });
     }
 
     render() {
-
+        let buttonText = "Login"
+        if (this.state.isLoading) {
+            buttonText = (<PulseLoader color="#f7f7f7" loading={this.state.isLoading} size={10}/>)
+        }
         return (<Row>
             <Col md={{span: 4, offset: 4}}>
                 <h2>Login</h2>
@@ -57,7 +72,7 @@ class Login extends React.Component {
                         <Form.Text><Link to="/forgot-password">Forgot your password?</Link></Form.Text>
                     </Form.Group>
                     <Form.Group>
-                        <Button onClick={this.login} variant="primary">Login</Button>
+                        <Button disabled={this.state.isLoading} onClick={this.login} variant="primary">{buttonText}</Button>
                     </Form.Group>
                 </Form>
             </Col>
