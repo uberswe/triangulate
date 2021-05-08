@@ -6,6 +6,7 @@ import (
 	"github.com/stripe/stripe-go/v72"
 	"log"
 	"os"
+	"strconv"
 )
 
 func initSettings() {
@@ -32,6 +33,17 @@ func initSettings() {
 	sessionIDParam = os.Getenv("SESSION_ID_PARAM")
 	sessionAuthKey = os.Getenv("SESSION_AUTH_KEY")
 	sessionEncryptionKey = os.Getenv("SESSION_ENCRYPTION_KEY")
+	workerCountString := os.Getenv("WORKER_COUNT")
+	workerCount, err = strconv.Atoi(workerCountString)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	premiumWorkerCountString := os.Getenv("PREMIUM_WORKER_COUNT")
+	premiumWorkerCount, err = strconv.Atoi(premiumWorkerCountString)
+	if err != nil {
+		log.Fatal(err)
+	}
 	sts := os.Getenv("STRICT_TRANSPORT_SECURITY")
 	strictTransportSecurity = sts != "false"
 	sc := os.Getenv("SECURE_COOKIES")

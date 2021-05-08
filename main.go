@@ -14,6 +14,7 @@ import (
 func Run() {
 	closeHandler()
 	initSettings()
+	initQueue()
 	initDatabase()
 	initSessions()
 	httpRateLimiter := initRatelimiter()
@@ -95,5 +96,4 @@ func init() {
 			panic(err)
 		}
 	}
-	go worker(jobChan)
 }

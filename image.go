@@ -64,7 +64,7 @@ func callGenerator(job Image) {
 			if currentJob.Identifier == job.Identifier {
 				mutex.Lock()
 				currentJob.RandomImage = true
-				currentJob.Thumbnail = source.Urls.Thumb
+				currentJob.Thumbnail = source.Urls.Regular
 				currentJob.Description = source.Description
 				currentJob.UserName = source.User.Name
 				currentJob.UserLocation = source.User.Location
@@ -100,11 +100,12 @@ func callGenerator(job Image) {
 			}
 		}
 
-		if img.Bounds().Max.X > 200 && img.Bounds().Max.Y > 200 {
+		// Watermark for unauthenticated users
+		if !job.AuthenticatedUser && img.Bounds().Max.X > 200 && img.Bounds().Max.Y > 200 {
 			b := img.Bounds()
 			m := image.NewRGBA(image.Rect(0, 0, b.Dx(), b.Dy()))
 			draw.Draw(m, m.Bounds(), img, b.Min, draw.Src)
-			addLabel(m, img.Bounds().Max.X-125, img.Bounds().Max.Y-5, "Triangulate.xyz")
+			addLabel(m, img.Bounds().Max.X-125, img.Bounds().Max.Y-10, "Triangulate.xyz")
 
 			err = saveOutput(m, fmt.Sprintf("%s/%s", outDir, imgName))
 			if err != nil {

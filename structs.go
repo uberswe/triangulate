@@ -33,7 +33,6 @@ type Stat struct {
 }
 
 type Image struct {
-	gorm.Model
 	FileName             string    `json:"file_name"`
 	Identifier           string    `json:"identifier"`
 	Timestamp            time.Time `json:"timestamp"`
@@ -63,6 +62,8 @@ type Image struct {
 	UserLocation         string      `json:"user_location"`
 	UserLink             string      `json:"user_link"`
 	ThumbnailLink        string      `json:"image_link"`
+	AuthenticatedUser    bool
+	Text                 string
 }
 
 type Settings struct {

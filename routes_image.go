@@ -20,11 +20,19 @@ import (
 func generate(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
+	// TODO refactor this function
+
 	err := r.ParseMultipartForm(10 * 1024 * 1024)
 	if err != nil {
 		log.Println(err)
 		writeJSONError(w, "", http.StatusInternalServerError)
 		return
+	}
+
+	loggedIn := false
+	user := r.Context().Value(ContextUserKey)
+	if user != nil && user.(uint) > 0 {
+		loggedIn = true
 	}
 
 	var img image.Image
@@ -92,6 +100,7 @@ func generate(w http.ResponseWriter, r *http.Request) {
 	triangulateWireframe := r.FormValue("triangulateWireframe")
 	triangulateNoise := r.FormValue("triangulateNoise")
 	triangulateGrayscale := r.FormValue("triangulateGrayscale")
+	text := r.FormValue("text")
 
 	wi, err := strconv.Atoi(width)
 	if err != nil {
@@ -213,8 +222,12 @@ func generate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	maxSize := 2000
-	if wi > maxSize || hi > maxSize {
-		writeJSONError(w, fmt.Sprintf("max size is %dx%d", 2000, 2000), http.StatusInternalServerError)
+	if loggedIn {
+		maxSize = 10000
+	}
+
+	if wi > maxSize || hi > maxSize || wi < 0 || hi < 0 {
+		writeJSONError(w, fmt.Sprintf("max size is %dx%d", maxSize, maxSize), http.StatusInternalServerError)
 		return
 	}
 
@@ -291,8 +304,14 @@ func generate(w http.ResponseWriter, r *http.Request) {
 		TriangulateWireframe: triangulateWireframeBool,
 		TriangulateGrayscale: triangulateGrayscaleBool,
 		TriangulateNoise:     triangulateNoiseBool,
+		Text:                 text,
+		AuthenticatedUser:    loggedIn,
 	}
-	jobChan <- job
+	if loggedIn {
+		premiumJobChan <- job
+	} else {
+		jobChan <- job
+	}
 	mutex.Unlock()
 	err = json.NewEncoder(w).Encode(resp)
 	if err != nil {

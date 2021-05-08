@@ -14,6 +14,7 @@ var (
 	images                  map[string]Image
 	mutex                   = &sync.Mutex{}
 	jobChan                 = make(chan Image, 999999)
+	premiumJobChan          = make(chan Image, 999999)
 	currentJob              Image
 	db                      *gorm.DB
 	priceID                 string
@@ -32,4 +33,6 @@ var (
 	strictTransportSecurity = true
 	secureCookies           = true
 	unsplashAccessKey       string
+	workerCount             int
+	premiumWorkerCount      int
 )

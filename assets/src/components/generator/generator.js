@@ -16,6 +16,7 @@ class Generator extends React.Component {
             isLoading: false,
             width: 1200,
             height: 675,
+            text: "",
             shapes: true,
             shapeStroke: true,
             triangulate: false,
@@ -152,6 +153,7 @@ class Generator extends React.Component {
         let data = {
             width: this.state.width,
             height: this.state.height,
+            text: this.state.text,
             shapes: this.state.shapes,
             type: this.state.imageType,
             shapeStroke: this.state.shapeStroke,
@@ -199,16 +201,14 @@ class Generator extends React.Component {
     }
 
     render() {
+
+        // TODO needs refactoring badly, this is my first component ever created with React :D I need to split this into more components
         let queueHolder = ""
         if (this.state.image !== "") {
             queueHolder = <Image src={this.state.image} fluid/>
-        } else if (this.state.queue > 0) {
-            queueHolder = <div>Rendering, you are {this.state.queue} in the queue.</div>
-        } else if (this.state.queue === 0) {
-            queueHolder = <div>Rendering, your image is being generated{this.state.dots}</div>
         }
-        let media = ""
 
+        let media = ""
         if (this.state.randomImage) {
             media = (<Card style={{width: '100%'}}>
                 <Row>
@@ -339,9 +339,13 @@ class Generator extends React.Component {
             </Form.Group>);
         }
 
-        var generateText = "Generate!"
-        if (this.state.isLoading) {
+        let generateText = "Generate!"
+        if (this.state.isLoading && this.state.queue > 0) {
+            generateText = (<span>Waiting in queue ({this.state.queue}) <PulseLoader color="#f7f7f7" loading={this.state.isLoading} size={10}/></span>)
+        } else if (this.state.isLoading) {
             generateText = (<span>Generating... <PulseLoader color="#f7f7f7" loading={this.state.isLoading} size={10}/></span>)
+        } else {
+            generateText = "Generate!"
         }
 
         return (
@@ -393,6 +397,16 @@ class Generator extends React.Component {
                                                 </Form.Group>
                                             </Col>
                                         </Row>
+                                    </Col>
+                                </Row>
+                                <Row>
+                                    <Col md={12}>
+                                        <Form.Group controlId="textGroup">
+                                            <Form.Label>Add text or leave this blank</Form.Label>
+                                            <Form.Control value={this.state.text}
+                                                          onChange={this.handleInputChange}
+                                                          name={`text`} type="Text"/>
+                                        </Form.Group>
                                     </Col>
                                 </Row>
                                 <Row>
