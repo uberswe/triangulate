@@ -31,6 +31,10 @@ func initSettings() {
 	sessionIDParam = os.Getenv("SESSION_ID_PARAM")
 	sessionAuthKey = os.Getenv("SESSION_AUTH_KEY")
 	sessionEncryptionKey = os.Getenv("SESSION_ENCRYPTION_KEY")
+	sts := os.Getenv("STRICT_TRANSPORT_SECURITY")
+	strictTransportSecurity = sts != "false"
+	sc := os.Getenv("SECURE_COOKIES")
+	secureCookies = sc != "false"
 
 	if sessionAuthKey == "" || sessionEncryptionKey == "" {
 		sessionAuthKey = string(base64Encode(securecookie.GenerateRandomKey(64)))

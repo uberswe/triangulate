@@ -14,11 +14,69 @@ import (
 )
 
 func login(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+		return
+	}
 
+	var req struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Printf("json.NewDecoder.Decode: %v", err)
+		return
+	}
+
+	data := []byte(req.Email)
+	emailHash := sha256.Sum256(data)
+
+	password := []byte(req.Password)
+
+	user := User{}
+	if res := db.First(&user, "email_hash = ?", fmt.Sprintf("%x", emailHash[:])); res.Error != nil || user.ID == 0 {
+		log.Println(res.Error)
+		http.Error(w, http.StatusText(500), http.StatusInternalServerError)
+		return
+	}
+
+	err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), password)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, http.StatusText(500), http.StatusInternalServerError)
+		return
+	}
+
+	// Auth success
+	loginAndRedirect(user, w, r)
 }
 
 func logout(w http.ResponseWriter, r *http.Request) {
-
+	gs, err := store.Get(r, cookieName)
+	if err != nil {
+		log.Println(err.Error())
+	} else {
+		if val, ok := gs.Values["session"]; ok {
+			if ses, ok := val.(Session); ok {
+				db.Where("auth_session_id = ?", ses.AuthSessionID).Delete(&AuthSession{})
+				gs.Values["session"] = Session{}
+				gs.Options.MaxAge = -1
+				gs.Options.Path = "/"
+				gs.Options.HttpOnly = true
+				gs.Options.SameSite = http.SameSiteStrictMode
+				gs.Options.Secure = secureCookies
+				err = gs.Save(r, w)
+				if err != nil {
+					log.Println(err.Error())
+				}
+				// redirect and prevent further writes
+				http.Redirect(w, r, "/", 302)
+				return
+			}
+		}
+	}
 }
 
 func register(w http.ResponseWriter, r *http.Request) {
@@ -35,6 +93,12 @@ func register(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		log.Printf("json.NewDecoder.Decode: %v", err)
+		return
+	}
+
+	// Validate password
+	if len(req.Password) < 8 {
+		http.Error(w, "password too short", http.StatusInternalServerError)
 		return
 	}
 
@@ -73,7 +137,7 @@ func register(w http.ResponseWriter, r *http.Request) {
 			ErrorData string `json:"error"`
 		}{
 			ErrorData: "test",
-		})
+		}, 200)
 		return
 	}
 
@@ -129,7 +193,7 @@ func register(w http.ResponseWriter, r *http.Request) {
 		SessionID string `json:"sessionId"`
 	}{
 		SessionID: s.ID,
-	})
+	}, 200)
 }
 
 func forgotPassword(w http.ResponseWriter, r *http.Request) {
@@ -138,4 +202,35 @@ func forgotPassword(w http.ResponseWriter, r *http.Request) {
 
 func resetPassword(w http.ResponseWriter, r *http.Request) {
 
+}
+
+func loginAndRedirect(user User, w http.ResponseWriter, r *http.Request) {
+	gs, err := store.Get(r, cookieName)
+	if err != nil {
+		log.Println(err.Error())
+	} else {
+		sesID := uuid.NewV4().String()
+		// store session id
+		authSession := AuthSession{
+			UserID:        user.ID,
+			AuthSessionID: sesID,
+		}
+		db.Create(&authSession)
+		if authSession.ID > 0 {
+			// set cookie
+			gs.Values["session"] = Session{
+				AuthSessionID: sesID,
+			}
+			gs.Options.Path = "/"
+			gs.Options.HttpOnly = true
+			gs.Options.SameSite = http.SameSiteStrictMode
+			gs.Options.Secure = secureCookies
+			err = gs.Save(r, w)
+			if err == nil {
+				// redirect and prevent further writes
+				http.Redirect(w, r, "/", 302)
+				return
+			}
+		}
+	}
 }

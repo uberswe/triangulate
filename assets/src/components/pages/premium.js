@@ -6,8 +6,8 @@ class Premium extends React.Component {
     constructor(props) {
         super (props);
         this.state = {
-            price_id: "",
-            stripe_key: "",
+            price_id: this.props.price_id,
+            stripe_key: this.props.stripe_key,
             stripe: null,
             email: "",
             password: ""
@@ -30,15 +30,6 @@ class Premium extends React.Component {
         script.onload = () => this.stripeLoaded ();
 
         document.body.appendChild (script);
-
-        axios.get ('/api/v1/settings').then (result => {
-            this.setState ({
-                price_id: result.data.price_id,
-                stripe_key: result.data.stripe_key
-            });
-        }).catch (error => {
-            console.log (error)
-        });
     }
 
     stripeLoaded() {

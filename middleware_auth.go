@@ -23,7 +23,7 @@ func AuthMiddleware(next http.Handler) http.Handler {
 						if res := db.First(&a, "auth_session_id = ?", ses.AuthSessionID); res.Error == nil {
 							if a.ID > 0 {
 								ctx := context.WithValue(r.Context(), ContextUserKey, a.UserID)
-								r.WithContext(ctx)
+								r = r.WithContext(ctx)
 							}
 						}
 					}

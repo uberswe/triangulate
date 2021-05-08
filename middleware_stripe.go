@@ -1,10 +1,8 @@
 package triangulate
 
 import (
-	uuid "github.com/satori/go.uuid"
 	"github.com/stripe/stripe-go/v72"
 	"github.com/stripe/stripe-go/v72/checkout/session"
-	"log"
 	"net/http"
 )
 
@@ -42,30 +40,7 @@ func StripeSessionMiddleware(next http.Handler) http.Handler {
 							mutex.Unlock()
 
 							// login && redirect
-							gs, err := store.Get(r, cookieName)
-							if err != nil {
-								log.Println(err.Error())
-							} else {
-								sesID := uuid.NewV4().String()
-								// store session id
-								authSession := AuthSession{
-									UserID:        user.ID,
-									AuthSessionID: sesID,
-								}
-								db.Create(&authSession)
-								if authSession.ID > 0 {
-									// set cookie
-									gs.Values["session"] = Session{
-										AuthSessionID: sesID,
-									}
-									err = gs.Save(r, w)
-									if err == nil {
-										// redirect and prevent further writes
-										http.Redirect(w, r, "/members", 302)
-										return
-									}
-								}
-							}
+							loginAndRedirect(user, w, r)
 
 						} else {
 							mutex.Unlock()

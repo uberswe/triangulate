@@ -11,7 +11,8 @@ import (
 	"syscall"
 )
 
-func writeJSON(w http.ResponseWriter, data interface{}) {
+func writeJSON(w http.ResponseWriter, data interface{}, status int) {
+	w.WriteHeader(status)
 	w.Header().Set("Content-Type", "application/json")
 	err := json.NewEncoder(w).Encode(data)
 	if err != nil {

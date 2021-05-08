@@ -53,6 +53,10 @@ class Generator extends React.Component {
         const target = event.target;
         let value = target.type === 'checkbox' ? target.checked : target.value;
         const name = target.name;
+        let maxSize = 2000;
+        if (this.props.isAuthenticated) {
+            maxSize = 10000
+        }
         if (name === "max") {
             if (parseInt (value) < parseInt (this.state.min)) {
                 value = this.state.min;
@@ -62,14 +66,14 @@ class Generator extends React.Component {
                 value = this.state.max;
             }
         } else if (name === "width") {
-            if (value > 2000) {
-                value = 2000;
+            if (value > maxSize) {
+                value = maxSize;
             } else if (value < 0) {
                 value = 0;
             }
         } else if (name === "height") {
-            if (value > 2000) {
-                value = 2000;
+            if (value > maxSize) {
+                value = maxSize;
             } else if (value < 0) {
                 value = 0;
             }

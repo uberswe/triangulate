@@ -21,7 +21,7 @@ type GeneratePollResponse struct {
 
 type User struct {
 	gorm.Model
-	EmailHash        string
+	EmailHash        string `gorm:"unique"`
 	PasswordHash     string
 	StripeCustomerID string
 }
