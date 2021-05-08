@@ -30,7 +30,7 @@ func settings(w http.ResponseWriter, r *http.Request) {
 	err := json.NewEncoder(w).Encode(s)
 	if err != nil {
 		log.Println(err)
-		http.Error(w, http.StatusText(500), 500)
+		writeJSONError(w, "", 500)
 		return
 	}
 }

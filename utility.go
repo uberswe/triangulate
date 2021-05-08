@@ -22,6 +22,17 @@ func writeJSON(w http.ResponseWriter, data interface{}, status int) {
 	}
 }
 
+func writeJSONError(w http.ResponseWriter, message string, status int) {
+	if message == "" {
+		message = http.StatusText(status)
+	}
+	writeJSON(w, struct {
+		Error string `json:"error"`
+	}{
+		Error: message,
+	}, status)
+}
+
 func base64Encode(message []byte) []byte {
 	b := make([]byte, base64.StdEncoding.EncodedLen(len(message)))
 	base64.StdEncoding.Encode(b, message)

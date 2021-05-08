@@ -11,19 +11,19 @@ import (
 
 func handleWebhook(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
-		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+		writeJSONError(w, "", http.StatusMethodNotAllowed)
 		return
 	}
 	b, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		writeJSONError(w, "", http.StatusBadRequest)
 		log.Printf("ioutil.ReadAll: %v", err)
 		return
 	}
 
 	event, err := webhook.ConstructEvent(b, r.Header.Get("Stripe-Signature"), webhookSecret)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		writeJSONError(w, "", http.StatusBadRequest)
 		log.Printf("webhook.ConstructEvent: %v", err)
 		return
 	}
@@ -61,25 +61,26 @@ func handleWebhook(w http.ResponseWriter, r *http.Request) {
 
 func portal(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
-		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+		writeJSONError(w, "", http.StatusMethodNotAllowed)
 		return
 	}
 
 	uid := r.Context().Value(ContextUserKey)
 	if uid == nil || uid.(uint) == 0 {
-		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+		writeJSONError(w, "", http.StatusInternalServerError)
 		return
 	}
 	user := User{}
 	db.Where("id = ?", uid).First(&user)
 
 	if user.ID == 0 {
-		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+		writeJSONError(w, "", http.StatusInternalServerError)
 		return
 	}
 
 	if user.StripeCustomerID == "" {
-		http.Error(w, "no stripe customer id", http.StatusInternalServerError)
+		log.Println("customer id missing for user")
+		writeJSONError(w, "", http.StatusInternalServerError)
 		return
 	}
 

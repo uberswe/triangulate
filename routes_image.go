@@ -9,7 +9,6 @@ import (
 	"image/jpeg"
 	"image/png"
 	"io"
-	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
@@ -24,7 +23,7 @@ func generate(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseMultipartForm(10 * 1024 * 1024)
 	if err != nil {
 		log.Println(err)
-		http.Error(w, http.StatusText(500), 500)
+		writeJSONError(w, "", http.StatusInternalServerError)
 		return
 	}
 
@@ -33,10 +32,10 @@ func generate(w http.ResponseWriter, r *http.Request) {
 	imageType := r.FormValue("type")
 	if imageType == "upload" {
 
-		uploaded, uploadHeader, err := r.FormFile("fileUpload")
+		uploaded, _, err := r.FormFile("fileUpload")
 		if err != nil {
 			log.Println(err)
-			http.Error(w, http.StatusText(500), 500)
+			writeJSONError(w, "", http.StatusInternalServerError)
 			return
 		}
 		defer uploaded.Close()
@@ -54,14 +53,14 @@ func generate(w http.ResponseWriter, r *http.Request) {
 
 		if contentType != "image/jpeg" && contentType != "image/png" {
 			log.Println(contentType)
-			http.Error(w, http.StatusText(422), 422)
+			writeJSONError(w, "", http.StatusUnprocessableEntity)
 			return
 		}
 		if contentType == "image/jpeg" {
 			img, err = jpeg.Decode(uploaded)
 			if err != nil {
 				log.Println(err)
-				http.Error(w, http.StatusText(500), 500)
+				writeJSONError(w, "", http.StatusInternalServerError)
 				return
 			}
 		}
@@ -69,17 +68,8 @@ func generate(w http.ResponseWriter, r *http.Request) {
 		if contentType == "image/png" {
 			img, err = png.Decode(uploaded)
 			if err != nil {
-				x, err2 := ioutil.ReadAll(uploaded)
-				if err2 != nil {
-					log.Println(err)
-					http.Error(w, http.StatusText(500), 500)
-					return
-				}
-				s := string(x)
-				log.Println(s[0:50] + "..." + s[len(string(x))-50:])
-				log.Println(uploadHeader.Header)
 				log.Println(err)
-				http.Error(w, http.StatusText(500), 500)
+				writeJSONError(w, "", http.StatusInternalServerError)
 				return
 			}
 		}
@@ -106,163 +96,164 @@ func generate(w http.ResponseWriter, r *http.Request) {
 	wi, err := strconv.Atoi(width)
 	if err != nil {
 		log.Println(err)
-		http.Error(w, http.StatusText(500), 500)
+		writeJSONError(w, "", http.StatusInternalServerError)
 		return
 	}
 
 	hi, err := strconv.Atoi(height)
 	if err != nil {
 		log.Println(err)
-		http.Error(w, http.StatusText(500), 500)
+		writeJSONError(w, "", http.StatusInternalServerError)
 		return
 	}
 
 	ip, _, err := net.SplitHostPort(r.RemoteAddr)
 	if err != nil {
 		log.Println(err)
-		http.Error(w, http.StatusText(500), 500)
+		writeJSONError(w, "", http.StatusInternalServerError)
 		return
 	}
 
 	shapesBool, err := strconv.ParseBool(shapes)
 	if err != nil {
 		log.Println(err)
-		http.Error(w, http.StatusText(500), 500)
+		writeJSONError(w, "", http.StatusInternalServerError)
 		return
 	}
 
 	shapesStrokeBool, err := strconv.ParseBool(shapeStroke)
 	if err != nil {
 		log.Println(err)
-		http.Error(w, http.StatusText(500), 500)
+		writeJSONError(w, "", http.StatusInternalServerError)
 		return
 	}
 
 	triangulateBool, err := strconv.ParseBool(triangulate)
 	if err != nil {
 		log.Println(err)
-		http.Error(w, http.StatusText(500), 500)
+		writeJSONError(w, "", http.StatusInternalServerError)
 		return
 	}
 
 	triangulateBeforeBool, err := strconv.ParseBool(triangulateBefore)
 	if err != nil {
 		log.Println(err)
-		http.Error(w, http.StatusText(500), 500)
+		writeJSONError(w, "", http.StatusInternalServerError)
 		return
 	}
 
 	triangulateNoiseBool, err := strconv.ParseBool(triangulateNoise)
 	if err != nil {
 		log.Println(err)
-		http.Error(w, http.StatusText(500), 500)
+		writeJSONError(w, "", http.StatusInternalServerError)
 		return
 	}
 
 	triangulateWireframeBool, err := strconv.ParseBool(triangulateWireframe)
 	if err != nil {
 		log.Println(err)
-		http.Error(w, http.StatusText(500), 500)
+		writeJSONError(w, "", http.StatusInternalServerError)
 		return
 	}
 
 	triangulateGrayscaleBool, err := strconv.ParseBool(triangulateGrayscale)
 	if err != nil {
 		log.Println(err)
-		http.Error(w, http.StatusText(500), 500)
+		writeJSONError(w, "", http.StatusInternalServerError)
 		return
 	}
 
 	strokeThicknessInt, err := strconv.Atoi(strokeThickness)
 	if err != nil {
 		log.Println(err)
-		http.Error(w, http.StatusText(500), 500)
+		writeJSONError(w, "", http.StatusInternalServerError)
 		return
 	}
 
 	complexityAmountInt, err := strconv.Atoi(complexityAmount)
 	if err != nil {
 		log.Println(err)
-		http.Error(w, http.StatusText(500), 500)
+		writeJSONError(w, "", http.StatusInternalServerError)
 		return
 	}
 
 	minInt, err := strconv.Atoi(min)
 	if err != nil {
 		log.Println(err)
-		http.Error(w, http.StatusText(500), 500)
+		writeJSONError(w, "", http.StatusInternalServerError)
 		return
 	}
 
 	maxInt, err := strconv.Atoi(max)
 	if err != nil {
 		log.Println(err)
-		http.Error(w, http.StatusText(500), 500)
+		writeJSONError(w, "", http.StatusInternalServerError)
 		return
 	}
 
 	maxPointsInt, err := strconv.Atoi(maxPoints)
 	if err != nil {
 		log.Println(err)
-		http.Error(w, http.StatusText(500), 500)
+		writeJSONError(w, "", http.StatusInternalServerError)
 		return
 	}
 
 	pointsThresholdInt, err := strconv.Atoi(pointsThreshold)
 	if err != nil {
 		log.Println(err)
-		http.Error(w, http.StatusText(500), 500)
+		writeJSONError(w, "", http.StatusInternalServerError)
 		return
 	}
 
 	sobelThresholdInt, err := strconv.Atoi(sobelThreshold)
 	if err != nil {
 		log.Println(err)
-		http.Error(w, http.StatusText(500), 500)
+		writeJSONError(w, "", http.StatusInternalServerError)
 		return
 	}
 
-	if wi > 2000 || hi > 2000 {
-		http.Error(w, "max size is 1200x1200", 500)
+	maxSize := 2000
+	if wi > maxSize || hi > maxSize {
+		writeJSONError(w, fmt.Sprintf("max size is %dx%d", 2000, 2000), http.StatusInternalServerError)
 		return
 	}
 
 	if minInt > 10 || minInt < 3 {
-		http.Error(w, "min invalid", 500)
+		writeJSONError(w, "min vertices is invalid", http.StatusInternalServerError)
 		return
 	}
 
 	if maxInt > 10 || maxInt < 3 {
-		http.Error(w, "max invalid", 500)
+		writeJSONError(w, "max vertices is invalid", http.StatusInternalServerError)
 		return
 	}
 
 	if complexityAmountInt > 100 || complexityAmountInt < 1 {
-		http.Error(w, "complexity invalid", 500)
+		writeJSONError(w, "complexity is invalid", http.StatusInternalServerError)
 		return
 	}
 
 	if strokeThicknessInt > 10 || strokeThicknessInt < 1 {
 		log.Println(strokeThickness)
-		http.Error(w, "stroke invalid", 500)
+		writeJSONError(w, "stroke is invalid", http.StatusInternalServerError)
 		return
 	}
 
 	if maxPointsInt > 5000 || maxPointsInt < 500 {
 		log.Println(maxPoints)
-		http.Error(w, "max points invalid", 500)
+		writeJSONError(w, "max points is invalid", http.StatusInternalServerError)
 		return
 	}
 
 	if pointsThresholdInt > 30 || pointsThresholdInt < 10 {
 		log.Println(pointsThreshold)
-		http.Error(w, "point threshold invalid", 500)
+		writeJSONError(w, "point threshold is invalid", http.StatusInternalServerError)
 		return
 	}
 
 	if sobelThresholdInt > 20 || sobelThresholdInt < 5 {
 		log.Println(sobelThresholdInt)
-		http.Error(w, "sobel threshold invalid", 500)
+		writeJSONError(w, "sobel threshold is invalid", http.StatusInternalServerError)
 		return
 	}
 
@@ -306,7 +297,7 @@ func generate(w http.ResponseWriter, r *http.Request) {
 	err = json.NewEncoder(w).Encode(resp)
 	if err != nil {
 		log.Println(err.Error())
-		http.Error(w, http.StatusText(500), 500)
+		writeJSONError(w, "", http.StatusInternalServerError)
 		return
 	}
 }
@@ -321,7 +312,7 @@ func img(w http.ResponseWriter, r *http.Request) {
 			res = fmt.Sprintf("%s/%s", outDir, val.FileName)
 		} else {
 			log.Println(errors.New(fmt.Sprintf("%s did not match %s", r.RemoteAddr, val.RequestIP)))
-			http.Error(w, http.StatusText(500), 500)
+			writeJSONError(w, "", http.StatusInternalServerError)
 			return
 		}
 	}
@@ -329,12 +320,12 @@ func img(w http.ResponseWriter, r *http.Request) {
 	img, err := os.Open(res)
 	if err != nil {
 		log.Println(err)
-		http.Error(w, http.StatusText(500), 500)
+		writeJSONError(w, "", http.StatusInternalServerError)
 		return
 	}
 	defer img.Close()
 	w.Header().Set("Content-Type", "image/png")
-	io.Copy(w, img)
+	_, _ = io.Copy(w, img)
 }
 
 func generatePoll(w http.ResponseWriter, r *http.Request) {
@@ -366,7 +357,7 @@ func generatePoll(w http.ResponseWriter, r *http.Request) {
 	err := json.NewEncoder(w).Encode(resp)
 	if err != nil {
 		log.Println(err.Error())
-		http.Error(w, http.StatusText(500), 500)
+		writeJSONError(w, "", http.StatusInternalServerError)
 		return
 	}
 }

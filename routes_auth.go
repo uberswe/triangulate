@@ -15,7 +15,7 @@ import (
 
 func login(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
-		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+		writeJSONError(w, "", http.StatusMethodNotAllowed)
 		return
 	}
 
@@ -25,7 +25,7 @@ func login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		writeJSONError(w, "", http.StatusInternalServerError)
 		log.Printf("json.NewDecoder.Decode: %v", err)
 		return
 	}
@@ -38,14 +38,14 @@ func login(w http.ResponseWriter, r *http.Request) {
 	user := User{}
 	if res := db.First(&user, "email_hash = ?", fmt.Sprintf("%x", emailHash[:])); res.Error != nil || user.ID == 0 {
 		log.Println(res.Error)
-		http.Error(w, http.StatusText(500), http.StatusInternalServerError)
+		writeJSONError(w, "", http.StatusInternalServerError)
 		return
 	}
 
 	err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), password)
 	if err != nil {
 		log.Println(err)
-		http.Error(w, http.StatusText(500), http.StatusInternalServerError)
+		writeJSONError(w, "", http.StatusInternalServerError)
 		return
 	}
 
@@ -82,7 +82,7 @@ func logout(w http.ResponseWriter, r *http.Request) {
 
 func register(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
-		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+		writeJSONError(w, "", http.StatusMethodNotAllowed)
 		return
 	}
 
@@ -92,21 +92,21 @@ func register(w http.ResponseWriter, r *http.Request) {
 		Password string `json:"password"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		writeJSONError(w, "", http.StatusInternalServerError)
 		log.Printf("json.NewDecoder.Decode: %v", err)
 		return
 	}
 
 	// Validate password
 	if len(req.Password) < 8 {
-		http.Error(w, "password too short", http.StatusInternalServerError)
+		writeJSONError(w, "password is too short", http.StatusInternalServerError)
 		return
 	}
 
 	// Validate email
 	if err := emailx.Validate(req.Email); err != nil {
 		log.Println(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		writeJSONError(w, "", http.StatusInternalServerError)
 		return
 	}
 
@@ -117,7 +117,7 @@ func register(w http.ResponseWriter, r *http.Request) {
 	user := User{}
 	db.Where("email_hash = ?", fmt.Sprintf("%x", hash[:])).First(&user)
 	if user.ID != 0 {
-		http.Error(w, http.StatusText(500), http.StatusInternalServerError)
+		writeJSONError(w, "", http.StatusInternalServerError)
 		return
 	}
 
@@ -144,12 +144,7 @@ func register(w http.ResponseWriter, r *http.Request) {
 
 	s, err := session.New(params)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeJSON(w, struct {
-			ErrorData string `json:"error"`
-		}{
-			ErrorData: "test",
-		}, 200)
+		writeJSONError(w, "", http.StatusBadRequest)
 		return
 	}
 
@@ -157,7 +152,7 @@ func register(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Println(cookieName)
 		log.Println(err.Error())
-		http.Error(w, http.StatusText(500), 500)
+		writeJSONError(w, "", http.StatusInternalServerError)
 		return
 	}
 
@@ -166,7 +161,7 @@ func register(w http.ResponseWriter, r *http.Request) {
 	hashedPassword, err := bcrypt.GenerateFromPassword(password, bcrypt.DefaultCost)
 	if err != nil {
 		log.Println(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		writeJSONError(w, "", http.StatusInternalServerError)
 		return
 	}
 
@@ -182,7 +177,7 @@ func register(w http.ResponseWriter, r *http.Request) {
 	res := db.Create(&tmp)
 	if res.Error != nil {
 		log.Println(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		writeJSONError(w, "", http.StatusInternalServerError)
 		return
 	}
 
@@ -198,7 +193,7 @@ func register(w http.ResponseWriter, r *http.Request) {
 	err = gs.Save(r, w)
 	if err != nil {
 		log.Println(gs.Values["session"])
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		writeJSONError(w, "", http.StatusInternalServerError)
 		return
 	}
 
@@ -221,6 +216,8 @@ func loginAndRedirect(user User, w http.ResponseWriter, r *http.Request) {
 	gs, err := store.Get(r, cookieName)
 	if err != nil {
 		log.Println(err.Error())
+		writeJSONError(w, "", http.StatusInternalServerError)
+		return
 	} else {
 		sesID := uuid.NewV4().String()
 		// store session id
