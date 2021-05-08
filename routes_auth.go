@@ -110,6 +110,17 @@ func register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	data := []byte(req.Email)
+	hash := sha256.Sum256(data)
+
+	// Make sure there isn't a user with that email
+	user := User{}
+	db.Where("email_hash = ?", fmt.Sprintf("%x", hash[:])).First(&user)
+	if user.ID != 0 {
+		http.Error(w, http.StatusText(500), http.StatusInternalServerError)
+		return
+	}
+
 	// See https://stripe.com/docs/api/checkout/sessions/create
 	// for additional parameters to pass.
 	// {CHECKOUT_SESSION_ID} is a string literal; do not change it!
@@ -149,9 +160,6 @@ func register(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(500), 500)
 		return
 	}
-
-	data := []byte(req.Email)
-	hash := sha256.Sum256(data)
 
 	password := []byte(req.Password)
 
