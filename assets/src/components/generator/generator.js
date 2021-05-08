@@ -1,4 +1,4 @@
-import {Button, Card, Col, Form, Image, Row} from "react-bootstrap";
+import {Alert, Button, Card, Col, Form, Image, Row} from "react-bootstrap";
 import React from "react";
 import axios from "axios";
 import { css } from "@emotion/core";
@@ -396,6 +396,9 @@ class Generator extends React.Component {
                                                                   name={`height`} type="Text"/>
                                                 </Form.Group>
                                             </Col>
+                                            <Alert show={this.state.height > 1500 && this.state.width > 1500} variant="warning">
+                                                Please note that large images can sometimes take several minutes to generate.
+                                            </Alert>
                                         </Row>
                                     </Col>
                                 </Row>
