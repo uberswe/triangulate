@@ -1,5 +1,5 @@
 import React from 'react'
-import {Button, Col, Form, Row} from "react-bootstrap"
+import {Button, Col, Form, Row, Alert} from "react-bootstrap"
 import {Link} from "react-router-dom";
 import axios from "axios";
 import { css } from "@emotion/core";
@@ -13,6 +13,7 @@ class Login extends React.Component {
             email: "",
             password: "",
             isLoading: false,
+            error: false,
         };
 
         this.login = this.login.bind(this)
@@ -41,12 +42,14 @@ class Login extends React.Component {
             },).then (result => {
                 window.location = result.request.responseURL
             this.setState({
-                isLoading: false
+                isLoading: false,
+                error:false,
             })
         }).catch (error => {
             console.log (error)
             this.setState({
-                isLoading: false
+                isLoading: false,
+                error:true,
             })
         });
     }
@@ -72,6 +75,10 @@ class Login extends React.Component {
                         <Form.Text><Link to="/forgot-password">Forgot your password?</Link></Form.Text>
                     </Form.Group>
                     <Form.Group>
+                        <Alert show={this.state.error} variant="danger">
+                            An error occurred. Please make sure that you have entered the correct password and the email that belongs to your account. If you are still having trouble please contact <a
+                            href="mailto:support@triangulate.xyz?subject=Triangulate.xyz%3A%20Trouble%20logging%20in">support@triangulate.xyz</a>.
+                        </Alert>
                         <Button disabled={this.state.isLoading} onClick={this.login} variant="primary">{buttonText}</Button>
                     </Form.Group>
                 </Form>

@@ -1,5 +1,5 @@
 import React from 'react'
-import {Button, Col, Form, Row} from "react-bootstrap"
+import {Alert, Button, Col, Form, Row} from "react-bootstrap"
 import { css } from "@emotion/core";
 import PulseLoader from "react-spinners/PulseLoader";
 
@@ -14,6 +14,7 @@ class Premium extends React.Component {
             password: "",
             stripeAdded: false,
             isLoading: false,
+            error: false,
         };
 
         this.buttonClick = this.buttonClick.bind (this);
@@ -75,11 +76,13 @@ class Premium extends React.Component {
                     password: password
                 })
             }).then (function (result) {
+                if (result.status !== 200) {
+                    this.setState ({
+                        isLoading: false,
+                        error: true,
+                    })
+                }
                 return result.json ();
-            }).catch(function (error) {
-                this.setState({
-                    isLoading: false
-                })
             });
         };
 
@@ -90,9 +93,20 @@ class Premium extends React.Component {
                 .redirectToCheckout ({
                     sessionId: data.sessionId
                 })
-                .then (window.handleResult);
-            this.setState({
-                isLoading: false
+                .then (window.handleResult).catch(function (error) {
+                premium.setState({
+                    isLoading: false,
+                    error: true
+                })
+            });
+            premium.setState({
+                isLoading: false,
+                error:false,
+            })
+        }).catch(function (error) {
+            premium.setState({
+                isLoading: false,
+                error: true
             })
         });
     }
@@ -127,17 +141,18 @@ class Premium extends React.Component {
                         <Form.Label>Email</Form.Label>
                         <Form.Control name={`email`} type="email" id="formEmail" autocomplete="on"
                                       onChange={this.onInputChange} value={this.state.email}/>
-                        <Form.Text>Your email is stored as a <a href="https://en.wikipedia.org/wiki/SHA-2"
-                                                                target="_blank">SHA-256</a> hash which is only used
-                            during login or password reset requests.
-                            If you have any problems or questions please contact <a
-                                href="mailto:markus@triangulate.xyz?subject=Triangulate.xyz%3A%20Sign%20up%20support">support@triangulate.xyz</a></Form.Text>
+                        <Form.Text>Emails are stored as a <a href="https://en.wikipedia.org/wiki/SHA-2" target="_blank">SHA-256</a> hash.</Form.Text>
                     </Form.Group>
                     <Form.Group controlId="formPassword">
                         <Form.Label>Password</Form.Label>
                         <Form.Control name={`password`} type="password" id="formPassword" autocomplete="on"
                                       onChange={this.onInputChange} value={this.state.password}/>
+                        <Form.Text>Passwords are stored as a <a href="https://en.wikipedia.org/wiki/Bcrypt" target="_blank">Bcrypt</a> hash with a minimum cost of 10.</Form.Text>
                     </Form.Group>
+                    <Alert show={this.state.error} variant="danger">
+                        An error occurred. Please make sure that you have entered a password at least 8 characters long and a valid email. If you are still having trouble please contact <a
+                        href="mailto:support@triangulate.xyz?subject=Triangulate.xyz%3A%20Trouble%20registering%20in">support@triangulate.xyz</a>.
+                    </Alert>
                     <Form.Group>
                         <Button disabled={!this.state.stripe || this.state.isLoading} onClick={this.buttonClick} variant="primary">{buttonText}</Button>
                     </Form.Group>
