@@ -31,4 +31,5 @@ var (
 	randomUnsplashImages    []UnsplashRandomImageResponse
 	strictTransportSecurity = true
 	secureCookies           = true
+	unsplashAccessKey       string
 )

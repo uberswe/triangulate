@@ -187,7 +187,7 @@ func queueImages() {
 			return
 		}
 
-		req.Header.Set("Authorization", "Client-ID PkygelfQYXYPxyYvzEbj5CWs9keFFdbZqjaavRsbT78")
+		req.Header.Set("Authorization", fmt.Sprintf("Client-ID %s", unsplashAccessKey))
 		client := &http.Client{}
 		resp, err := client.Do(req)
 		if err != nil {

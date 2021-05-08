@@ -22,6 +22,7 @@ func initSettings() {
 	addr = os.Getenv("ADDR")
 	stripePrivateKey = os.Getenv("STRIPE_PRIVATE_KEY")
 	stripePublicKey = os.Getenv("STRIPE_PUBLIC_KEY")
+	unsplashAccessKey = os.Getenv("UNSPLASH_ACCESS_KEY")
 	successUrl = os.Getenv("SUCCESS_URL")
 	cancelUrl = os.Getenv("CANCEL_URL")
 	returnURL = os.Getenv("RETURN_URL")
