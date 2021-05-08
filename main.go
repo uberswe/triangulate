@@ -28,7 +28,7 @@ func Run() {
 	apiRouter.HandleFunc("/api/v1/logout", logout)
 	apiRouter.HandleFunc("/api/v1/register", register)
 	apiRouter.HandleFunc("/api/v1/forgot-password", forgotPassword)
-	apiRouter.HandleFunc("/api/v1/reset-password/{code}", resetPassword)
+	apiRouter.HandleFunc("/api/v1/reset-password", resetPassword)
 	apiRouter.HandleFunc("/api/v1/settings", settings)
 	apiRouter.HandleFunc("/api/v1/portal", portal)
 	apiRouter.HandleFunc("/api/v1/stripe/webhook", handleWebhook)

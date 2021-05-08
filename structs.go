@@ -81,8 +81,9 @@ type AuthSession struct {
 
 type PasswordReset struct {
 	gorm.Model
-	UserID uint
-	Code   string
+	UserID    uint
+	Code      string
+	ExpiresAt time.Time
 }
 
 type Session struct {

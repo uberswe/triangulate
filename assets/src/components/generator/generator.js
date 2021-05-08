@@ -99,44 +99,46 @@ class Generator extends React.Component {
     }
 
     poll() {
-        this.state.timer = setInterval (() => {
-            axios.get ('/api/v1/generate/' + this.state.identifier).then (result => {
-                this.setState ({
-                    queue: result.data.queue,
-                    image: result.data.link
-                });
-                if (result.data.randomImage) {
+        this.setState({
+            timer: setInterval (() => {
+                axios.get ('/api/v1/generate/' + this.state.identifier).then (result => {
                     this.setState ({
-                        randomImage: true,
-                        description: result.data.description,
-                        thumbnail: result.data.thumbnail,
-                        user_link: result.data.user_link,
-                        user_location: result.data.user_location,
-                        user_name: result.data.user_name,
-                        image_link: result.data.image_link
-                    })
-                }
-                this.setState ({
-                    dots: this.state.dots + "."
-                })
-                if (this.state.image !== "") {
+                        queue: result.data.queue,
+                        image: result.data.link
+                    });
+                    if (result.data.randomImage) {
+                        this.setState ({
+                            randomImage: true,
+                            description: result.data.description,
+                            thumbnail: result.data.thumbnail,
+                            user_link: result.data.user_link,
+                            user_location: result.data.user_location,
+                            user_name: result.data.user_name,
+                            image_link: result.data.image_link
+                        })
+                    }
                     this.setState ({
-                        dots: "."
+                        dots: this.state.dots + "."
                     })
+                    if (this.state.image !== "") {
+                        this.setState ({
+                            dots: "."
+                        })
+                        clearInterval (this.state.timer)
+                        this.setState ({
+                            isLoading: false
+                        });
+                    }
+                }).catch (error => {
+                    alert (error)
                     clearInterval (this.state.timer)
                     this.setState ({
-                        isLoading: false
+                        isLoading: false,
+                        dots: "."
                     });
-                }
-            }).catch (error => {
-                alert (error)
-                clearInterval (this.state.timer)
-                this.setState ({
-                    isLoading: false,
-                    dots: "."
                 });
-            });
-        }, 1000);
+            }, 1000)
+        })
     }
 
     toggleButtonState = () => {

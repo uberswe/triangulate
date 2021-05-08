@@ -148,13 +148,13 @@ class Premium extends React.Component {
                         <Form.Label>Email</Form.Label>
                         <Form.Control name={`email`} type="email" id="formEmail" autocomplete="on"
                                       onChange={this.onInputChange} value={this.state.email}/>
-                        <Form.Text>Emails are stored as a <a href="https://en.wikipedia.org/wiki/SHA-2" target="_blank">SHA-256</a> hash.</Form.Text>
+                        <Form.Text>Emails are stored as a <a href="https://en.wikipedia.org/wiki/SHA-2" target="_blank" rel="noreferrer">SHA-256</a> hash.</Form.Text>
                     </Form.Group>
                     <Form.Group controlId="formPassword">
                         <Form.Label>Password</Form.Label>
                         <Form.Control name={`password`} type="password" id="formPassword" autocomplete="on"
                                       onChange={this.onInputChange} value={this.state.password}/>
-                        <Form.Text>Passwords are stored as a <a href="https://en.wikipedia.org/wiki/Bcrypt" target="_blank">Bcrypt</a> hash with a minimum cost of 10.</Form.Text>
+                        <Form.Text>Passwords are stored as a <a href="https://en.wikipedia.org/wiki/Bcrypt" target="_blank" rel="noreferrer">Bcrypt</a> hash with a minimum cost of 10.</Form.Text>
                     </Form.Group>
                     <Alert show={this.state.error} variant="danger">
                         An error occurred. Please make sure that you have entered a password at least 8 characters long and a valid email. If you are still having trouble please contact <a

@@ -11,6 +11,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"log"
 	"net/http"
+	"time"
 )
 
 func login(w http.ResponseWriter, r *http.Request) {
@@ -231,9 +232,19 @@ func forgotPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	passwordReset := PasswordReset{
+	passwordReset := PasswordReset{}
+	if res := db.First(&passwordReset, "user_id = ? AND expires_at > ?", user.ID, time.Now()); res.Error != nil || user.ID == 0 {
+		log.Println(res.Error)
+		// We don't want to disclose if the email exists or not
+		writeJSON(w, nil, 200)
+		return
+	}
+
+	passwordReset = PasswordReset{
 		UserID: user.ID,
 		Code:   uuid.NewV4().String(),
+		// Password reset links are valid for 1 hour
+		ExpiresAt: time.Now().Add(time.Hour),
 	}
 
 	if res := db.Create(&passwordReset); res.Error != nil || passwordReset.ID == 0 {
@@ -275,7 +286,7 @@ func resetPassword(w http.ResponseWriter, r *http.Request) {
 	}
 
 	passwordReset := PasswordReset{}
-	if res := db.First(&passwordReset, "code = ?", req.Code); res.Error != nil || passwordReset.ID == 0 {
+	if res := db.First(&passwordReset, "code = ? AND expires_at > ?", req.Code, time.Now()); res.Error != nil || passwordReset.ID == 0 {
 		log.Println(res.Error)
 		writeJSONError(w, "", http.StatusInternalServerError)
 		return
