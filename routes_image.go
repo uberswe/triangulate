@@ -328,6 +328,8 @@ func img(w http.ResponseWriter, r *http.Request) {
 	mutex.Lock()
 	if val, ok := images[vars["id"]]; ok {
 		ip, _, err := net.SplitHostPort(r.RemoteAddr)
+		hash := sha256.Sum256([]byte(ip))
+		ip = fmt.Sprintf("%x", hash)
 		if err == nil && ip == val.RequestIP {
 			res = fmt.Sprintf("%s/%s", outDir, val.FileName)
 		} else {

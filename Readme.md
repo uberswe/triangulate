@@ -4,7 +4,7 @@ This is the source code for [Triangulate.xyz](https://www.triangulate.xyz) which
 
 I created this project to learn ReactJS, this was my first project. I also wanted to make a backend in Golang and learn how to integrate Stripe for payments.
 
-To run the project simply type the following in the root folder:
+Begin by copying the `.example.env` file to `.env` and make any needed changes. To run the project simply type the following in the root folder:
 
 `yarn --cwd=assets build && go run cmd/triangulate/main.go`
 
