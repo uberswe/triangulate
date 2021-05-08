@@ -1,6 +1,5 @@
 import React from 'react'
 import {Button, Col, Form, Row} from "react-bootstrap"
-import axios from "axios";
 
 class Premium extends React.Component {
     constructor(props) {
@@ -27,14 +26,14 @@ class Premium extends React.Component {
         const script = document.createElement ("script");
         script.src = "https://js.stripe.com/v3/";
         script.async = true;
-        script.onload = () => this.stripeLoaded ();
+        script.onload = () => this.stripeLoaded();
 
         document.body.appendChild (script);
     }
 
     stripeLoaded() {
         this.setState ({
-            stripe: Stripe (this.state.stripe_key)
+            stripe: Stripe(this.state.stripe_key)
         })
     }
 
