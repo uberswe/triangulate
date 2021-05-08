@@ -34,6 +34,10 @@ func initDatabase() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	err = db.AutoMigrate(&PasswordReset{})
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	stat := Stat{}
 	if res := db.First(&stat, "key = ?", "total_generated"); res.Error != nil && res.Error != gorm.ErrRecordNotFound {
