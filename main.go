@@ -35,6 +35,7 @@ func Run() {
 	apiRouter.HandleFunc("/api/v1/generate/{id}", generatePoll)
 	apiRouter.HandleFunc("/api/v1/img/{id}.png", img)
 	apiRouter.Use(AuthMiddleware)
+	apiRouter.Use(SensitiveHeadersMiddleware)
 
 	r := mux.NewRouter()
 	r.PathPrefix("/api/v1/").Handler(httpRateLimiter.RateLimit(apiRouter))
@@ -49,15 +50,7 @@ func Run() {
 	pages.Use(StripeSessionMiddleware)
 
 	r.PathPrefix("/").Handler(pages)
-
-	// TODO add
-	// X-Content-Type-Options: nosniff
-	// X-XSS-Protection: 1; mode=block
-	// Strict-Transport-Security: max-age=<seconds>[; includeSubDomains]
-	// Cache-control: no-store
-	// Pragma: no-cache
-	// X-Frame-Options: DENY
-	// generate does not appear to contain an anti-CSRF token
+	r.Use(GeneralHeadersMiddleware)
 
 	log.Printf("Listening on %s\n", addr)
 	err := http.ListenAndServe(addr, r)
