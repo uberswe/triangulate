@@ -51,6 +51,7 @@ func login(w http.ResponseWriter, r *http.Request) {
 
 	// Auth success
 	loginAndRedirect(user, w, r)
+	return
 }
 
 func logout(w http.ResponseWriter, r *http.Request) {
@@ -222,7 +223,6 @@ func loginAndRedirect(user User, w http.ResponseWriter, r *http.Request) {
 		db.Create(&authSession)
 		if authSession.ID > 0 {
 			// set cookie
-			log.Println(sesID)
 			gs.Values["session"] = Session{
 				AuthSessionID: sesID,
 			}

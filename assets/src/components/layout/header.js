@@ -12,7 +12,7 @@ class Header extends React.Component {
         if (this.props.isAuthenticated) {
             nav = (<Nav className="mr-auto">
                 <Link to="/" class="nav-link">Home</Link>
-                <Link to="#" class="nav-link">Manage Billing</Link>
+                <Link to="/billing" class="nav-link">Manage Billing</Link>
                 <Link to="/logout" class="nav-link">Logout</Link>
             </Nav>)
         } else {

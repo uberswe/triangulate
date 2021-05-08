@@ -12,11 +12,12 @@ import Logout from "./components/pages/logout";
 import ForgotPassword from "./components/pages/forgot-password";
 import PrivacyPolicy from "./components/pages/privacy-policy";
 import TermsOfService from "./components/pages/terms-of-service";
+import Billing from "./components/pages/billing";
 import axios from "axios";
 
 class App extends React.Component {
     constructor(props) {
-        super(props);
+        super (props);
 
         this.state = {
             isAuthenticated: false,
@@ -38,7 +39,7 @@ class App extends React.Component {
     }
 
     setAuthenticated = (authenticated) => {
-        this.setState(state => ({ isAuthenticated: authenticated }));
+        this.setState (state => ({isAuthenticated: authenticated}));
     };
 
     render() {
@@ -54,7 +55,8 @@ class App extends React.Component {
                             <Premium price_id={this.state.price_id} stripe_key={this.state.stripe_key}/>
                         </Route>
                         <Route path="/login">
-                            <Login setAuthenticated={this.setAuthenticated} isAuthenticated={this.state.isAuthenticated}/>
+                            <Login setAuthenticated={this.setAuthenticated}
+                                   isAuthenticated={this.state.isAuthenticated}/>
                         </Route>
                         <Route path="/forgot-password">
                             <ForgotPassword/>
@@ -70,6 +72,9 @@ class App extends React.Component {
                         </Route>
                         <Route path="/logout">
                             <Logout/>
+                        </Route>
+                        <Route path="/billing">
+                            <Billing/>
                         </Route>
                         <Route path="*">
                             <FourOhFour/>

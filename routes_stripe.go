@@ -1,6 +1,8 @@
 package triangulate
 
 import (
+	"github.com/stripe/stripe-go/v72"
+	portalsession "github.com/stripe/stripe-go/v72/billingportal/session"
 	"github.com/stripe/stripe-go/v72/webhook"
 	"io/ioutil"
 	"log"
@@ -55,4 +57,41 @@ func handleWebhook(w http.ResponseWriter, r *http.Request) {
 		log.Println("Unhandled event type:")
 		log.Println(event.Type)
 	}
+}
+
+func portal(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+		return
+	}
+
+	uid := r.Context().Value(ContextUserKey)
+	if uid == nil || uid.(uint) == 0 {
+		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+		return
+	}
+	user := User{}
+	db.Where("id = ?", uid).First(&user)
+
+	if user.ID == 0 {
+		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+		return
+	}
+
+	if user.StripeCustomerID == "" {
+		http.Error(w, "no stripe customer id", http.StatusInternalServerError)
+		return
+	}
+
+	params := &stripe.BillingPortalSessionParams{
+		Customer:  stripe.String(user.StripeCustomerID),
+		ReturnURL: stripe.String(returnURL),
+	}
+	ps, _ := portalsession.New(params)
+
+	writeJSON(w, struct {
+		URL string `json:"url"`
+	}{
+		URL: ps.URL,
+	}, 200)
 }

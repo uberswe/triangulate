@@ -41,7 +41,7 @@ func StripeSessionMiddleware(next http.Handler) http.Handler {
 
 							// login && redirect
 							loginAndRedirect(user, w, r)
-
+							return
 						} else {
 							mutex.Unlock()
 						}

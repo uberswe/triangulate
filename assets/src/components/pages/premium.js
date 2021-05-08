@@ -80,7 +80,7 @@ class Premium extends React.Component {
                 .redirectToCheckout ({
                     sessionId: data.sessionId
                 })
-                .then (handleResult);
+                .then (window.handleResult);
         });
     }
 
