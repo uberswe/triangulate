@@ -10,6 +10,7 @@ require (
 	github.com/gorilla/sessions v1.2.1
 	github.com/goware/emailx v0.2.0 // indirect
 	github.com/joho/godotenv v1.3.0
+	github.com/jordan-wright/email v4.0.1-0.20210109023952-943e75fe5223+incompatible
 	github.com/satori/go.uuid v1.2.0
 	github.com/stripe/stripe-go/v72 v72.44.0
 	github.com/throttled/throttled/v2 v2.7.1

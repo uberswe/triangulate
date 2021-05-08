@@ -2,29 +2,21 @@ package triangulate
 
 import (
 	"fmt"
+	"github.com/jordan-wright/email"
+	"log"
 	"net/smtp"
 )
 
 func sendEmail(receiver string, subject string, content string) {
-
-	// Receiver email address.
-	to := []string{
-		receiver,
-	}
-
-	// Message.
-	message := []byte(fmt.Sprintf(`Subject: %s
-
-		%s`, subject, content))
-
-	// Authentication.
-	auth := smtp.PlainAuth("", smtpUsername, smtpPassword, smtpHost)
-
-	// Sending email.
-	err := smtp.SendMail(smtpHost+":"+smtpPort, auth, fromEmail, to, message)
+	e := email.NewEmail()
+	e.From = fmt.Sprintf("Triangulate.xyz <%s>", fromEmail)
+	e.To = []string{receiver}
+	e.Subject = subject
+	e.Text = []byte(content)
+	err := e.Send(fmt.Sprintf("%s:%s", smtpHost, smtpPort), smtp.PlainAuth("", smtpUsername, smtpPassword, smtpHost))
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return
 	}
-	fmt.Println("Email Sent Successfully!")
+	log.Println("Email Sent Successfully!")
 }
