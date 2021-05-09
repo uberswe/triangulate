@@ -221,6 +221,13 @@ func forgotPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Validate email
+	if err := emailx.Validate(req.Email); err != nil {
+		log.Println(err)
+		writeJSONError(w, "", http.StatusInternalServerError)
+		return
+	}
+
 	data := []byte(req.Email)
 	emailHash := sha256.Sum256(data)
 

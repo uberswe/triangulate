@@ -398,7 +398,7 @@ class Generator extends React.Component {
                                                                   name={`height`} type="Text"/>
                                                 </Form.Group>
                                             </Col>
-                                            <Alert show={this.state.height > 1500 && this.state.width > 1500} variant="warning">
+                                            <Alert show={this.state.height > 1500 || this.state.width > 1500} variant="warning">
                                                 Please note that large images can sometimes take several minutes to generate.
                                             </Alert>
                                         </Row>
