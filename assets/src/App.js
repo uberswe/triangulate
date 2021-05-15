@@ -37,6 +37,23 @@ class App extends React.Component {
         }).catch (error => {
             console.log (error)
         });
+
+        let owa_baseUrl = 'https://a.beubo.com/';
+        const owa_cmds = owa_cmds || [];
+        owa_cmds.push (['setSiteId', '808e82efc935cd8ac08ccfc5aac963d2']);
+        owa_cmds.push (['trackPageView']);
+        owa_cmds.push (['trackClicks']);
+
+        (function () {
+            const _owa = document.createElement ('script');
+            _owa.type = 'text/javascript';
+            _owa.async = true;
+            owa_baseUrl = ('https:' == document.location.protocol ? window.owa_baseSecUrl || owa_baseUrl.replace (/http:/, 'https:') : owa_baseUrl);
+            _owa.src = owa_baseUrl + 'modules/base/js/owa.tracker-combined-min.js';
+            const _owa_s = document.getElementsByTagName ('script')[0];
+            _owa_s.parentNode.insertBefore (_owa, _owa_s);
+        } ());
+
     }
 
     setAuthenticated = (authenticated) => {
