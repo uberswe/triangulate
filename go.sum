@@ -1,3 +1,5 @@
+github.com/JoshVarga/svgparser v0.0.0-20200804023048-5eaba627a7d1 h1:RAQocNl+YQYGPt5yh4SR5zFUIHKrXnLhjIGhHO4Vwnc=
+github.com/JoshVarga/svgparser v0.0.0-20200804023048-5eaba627a7d1/go.mod h1:tMmgUTWcco9d1ZmK7zjxuTv7XWZhyutXIsgu0uJ3gDw=
 github.com/esimov/triangle v1.2.1 h1:EKykWm15SSZ5kiPJyVLd7BsmNPmmtu02DlftCzV0JmQ=
 github.com/esimov/triangle v1.2.1/go.mod h1:KxuX8LQ61Pe6jZraCWUKjta1BbB8UOrm2yFtmf9xLBM=
 github.com/fogleman/gg v1.0.0/go.mod h1:R/bRT+9gY/C5z7JzPU0zXsXHKM4/ayA+zqcVNZzPa1k=

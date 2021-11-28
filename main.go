@@ -1,6 +1,7 @@
 package art
 
 import (
+	"embed"
 	"fmt"
 	"github.com/esimov/triangle"
 	"github.com/gorilla/mux"
@@ -13,6 +14,7 @@ import (
 	"image/color"
 	"image/draw"
 	"image/png"
+	"io/fs"
 	"log"
 	"math/rand"
 	"net/http"
@@ -30,6 +32,12 @@ var (
 	jobChan   = make(chan Image, 999999)
 )
 
+//go:embed assets/*
+var static embed.FS
+
+//go:embed svgs/*
+var svgs embed.FS
+
 func worker(jobChan <-chan Image) {
 	for job := range jobChan {
 		callGenerator(job)
@@ -37,6 +45,11 @@ func worker(jobChan <-chan Image) {
 }
 
 func Run() {
+	port := ":3000"
+	if os.Getenv("PORT") != "" {
+		port = os.Getenv("PORT")
+	}
+
 	store, err := memstore.New(65536)
 	if err != nil {
 		log.Fatal(err)
@@ -57,15 +70,19 @@ func Run() {
 	}
 
 	r := mux.NewRouter()
-	fs := http.FileServer(http.Dir("./assets/build/static"))
-	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", fs))
+	subFS, err := fs.Sub(static, "assets/build/static")
+	if err != nil {
+		log.Fatal(err)
+	}
+	fileServer := http.FileServer(http.FS(subFS))
+	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", fileServer))
 	r.HandleFunc("/api/v1/generate", generate)
 	r.HandleFunc("/api/v1/generate/{id}", generatePoll)
 	r.HandleFunc("/api/v1/img/{id}.png", Img)
 	r.HandleFunc("/", index)
 
-	log.Println("Listening on :3000...")
-	err = http.ListenAndServe(":3000", httpRateLimiter.RateLimit(r))
+	log.Printf("Listening on %s\n", port)
+	err = http.ListenAndServe(port, httpRateLimiter.RateLimit(r))
 	if err != nil {
 		log.Fatal(err)
 	}

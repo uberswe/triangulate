@@ -305,7 +305,7 @@ class App extends React.Component {
                 <Row>
                     <Col md={12}>
                         <hr/>
-                        Created by <a href="https://github.com/uberswe">Markus Tenghamn</a>
+                        Created by <a href="https://github.com/uberswe">Markus Tenghamn</a> | Fork this project on <a href="https://github.com/uberswe/triangulate">Github</a>
                         <hr/>
                         This project uses ideas and code from <a
                         href="https://github.com/esimov/triangle">github.com/esimov/triangle</a> and <a

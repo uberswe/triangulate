@@ -37,7 +37,7 @@ func GenerateImage(img image.Image, width int, height int, stroke bool, StrokeTh
 		RotationSeed:             0.45,
 		RandomRotation:           true,
 		Stroke:                   stroke,
-	})
+	}, svgs)
 
 	rand.Seed(time.Now().Unix())
 

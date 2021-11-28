@@ -24,16 +24,16 @@ package generator
 // OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 import (
+	"embed"
 	"fmt"
+	"github.com/JoshVarga/svgparser"
 	"github.com/fogleman/gg"
-	"github.com/srwiley/rasterx"
-	"github.com/uberswe/oksvg"
 	"image"
 	"image/color"
-	"io/ioutil"
 	"log"
 	"math/rand"
-	"os"
+	"regexp"
+	"strconv"
 	"time"
 )
 
@@ -55,7 +55,8 @@ type UserParams struct {
 
 type Image struct {
 	UserParams
-	icons             []oksvg.SvgIcon
+	iconPaths         [][]Point
+	icons             []svgparser.Element
 	source            image.Image
 	dc                *gg.Context
 	sourceWidth       int
@@ -64,7 +65,12 @@ type Image struct {
 	initialStrokeSize float64
 }
 
-func Generate(source image.Image, userParams UserParams) *Image {
+type Point struct {
+	X float64
+	Y float64
+}
+
+func Generate(source image.Image, userParams UserParams, svgs embed.FS) *Image {
 	s := &Image{
 		UserParams: userParams,
 	}
@@ -81,27 +87,79 @@ func Generate(source image.Image, userParams UserParams) *Image {
 	s.source = source
 	s.dc = canvas
 
-	files, err := ioutil.ReadDir("./svgs/")
-	if err != nil {
-		log.Fatal(err)
+	if s.icons == nil {
+		s.icons = []svgparser.Element{}
+		files, err := svgs.ReadDir("svgs")
+		if err != nil {
+			log.Fatal(err)
+		}
+		for _, f := range files {
+			fmt.Println(f.Name())
+			in, err := svgs.Open("svgs/" + f.Name())
+			if err != nil {
+				log.Println(err)
+				return s
+			}
+			icon, err := svgparser.Parse(in, false)
+			if err != nil {
+				log.Println(err)
+				return s
+			}
+			s.icons = append(s.icons, *icon)
+			err = in.Close()
+			if err != nil {
+				log.Println(err)
+				return nil
+			}
+		}
 	}
-	for _, f := range files {
-		fmt.Println(f.Name())
-		in, err := os.Open("./svgs/" + f.Name())
-		if err != nil {
-			log.Println(err)
-			return s
+
+	if s.icons != nil {
+		for i, ic := range s.icons {
+			s.iconPaths = append(s.iconPaths, []Point{})
+			for _, element := range ic.Children {
+				if element.Name == "path" {
+					path, exists := element.Attributes["d"]
+					if exists {
+						reg, err := regexp.Compile("-?\\d+")
+						if err != nil {
+							log.Println(err)
+							break
+						}
+						matches := reg.FindAllStringSubmatch(path, -1)
+						first := ""
+						for index, match := range matches {
+							if index == 1 {
+								first = match[0]
+							}
+							if index%2 == 0 {
+								var f float64
+								var f2 float64
+								f, err = strconv.ParseFloat(match[0], 64)
+								if err != nil {
+									log.Println(err)
+									break
+								}
+								floatString := first
+								if index+1 < len(matches) {
+									floatString = matches[index+1][0]
+								}
+								f2, err = strconv.ParseFloat(floatString, 64)
+								if err != nil {
+									log.Println(err)
+									break
+								}
+								s.iconPaths[i] = append(s.iconPaths[i], Point{
+									X: f,
+									Y: f2,
+								})
+							}
+						}
+						break
+					}
+				}
+			}
 		}
-		icon, err := oksvg.ReadIconStream(in)
-		if err != nil {
-			log.Println(err)
-			return s
-		}
-		if s.icons == nil {
-			s.icons = []oksvg.SvgIcon{}
-		}
-		s.icons = append(s.icons, *icon)
-		in.Close()
 	}
 
 	return s
@@ -120,59 +178,45 @@ func (s *Image) Update() {
 	destY += float64(randRange(s.StrokeJitter))
 	edges := s.MinEdgeCount + rand.Intn(s.MaxEdgeCount-s.MinEdgeCount+1)
 
+	s.dc.SetRGBA255(r, g, b, int(s.InitialAlpha))
+	rotation := s.RotationSeed
+	if s.RandomRotation {
+		rotation = rotation + rand.Float64()
+	}
+
 	if n < len(s.icons) {
-		lineColor := color.NRGBA{
-			R: 255,
-			G: 255,
-			B: 255,
-			A: uint8(s.InitialAlpha * 2),
-		}
-		fillColor := color.NRGBA{
-			R: uint8(r),
-			G: uint8(g),
-			B: uint8(b),
-			A: uint8(s.InitialAlpha),
-		}
-		for i, ic := range s.icons {
-
-			if n == i {
-				ic.SetTarget(0, 0, s.strokeSize, s.strokeSize)
-				for i, _ := range ic.SVGPaths {
-					ic.SVGPaths[i].SetLineColor(lineColor)
-					ic.SVGPaths[i].SetFillColor(fillColor)
-				}
-				rgba := image.NewRGBA(image.Rect(0, 0, int(s.strokeSize), int(s.strokeSize)))
-				scanner := rasterx.NewScannerGV(int(s.strokeSize), int(s.strokeSize), rgba, rgba.Bounds())
-				ic.Draw(rasterx.NewDasher(int(s.strokeSize), int(s.strokeSize), scanner), s.InitialAlpha)
-				s.dc.DrawImage(rgba, int(destX), int(destY))
+		for index, point := range s.iconPaths[n] {
+			// TODO this is still too slow
+			// TODO this always starts at 0 0 of the entire image, it needs to be offset by dest x and y
+			if index == 0 {
+				s.dc.MoveTo(point.X, point.Y)
+			} else {
+				s.dc.LineTo(point.X, point.Y)
 			}
-
 		}
 	} else {
-		s.dc.SetRGBA255(r, g, b, int(s.InitialAlpha))
-		rotation := s.RotationSeed
-		if s.RandomRotation {
-			rotation = rotation + rand.Float64()
-		}
 		s.dc.DrawRegularPolygon(edges, destX, destY, s.strokeSize, rotation)
-		s.dc.FillPreserve()
+	}
 
-		if s.strokeSize <= s.StrokeInversionThreshold*s.initialStrokeSize {
-			if (r+g+b)/3 < 128 {
-				s.dc.SetRGBA255(255, 255, 255, int(s.InitialAlpha*2))
-			} else {
-				s.dc.SetRGBA255(0, 0, 0, int(s.InitialAlpha*2))
-			}
-		}
-		if s.Stroke {
-			s.dc.Stroke()
+	s.dc.FillPreserve()
+
+	if s.strokeSize <= s.StrokeInversionThreshold*s.initialStrokeSize {
+		if (r+g+b)/3 < 128 {
+			s.dc.SetRGBA255(255, 255, 255, int(s.InitialAlpha*2))
 		} else {
-			s.dc.ClearPath()
+			s.dc.SetRGBA255(0, 0, 0, int(s.InitialAlpha*2))
 		}
+	}
+	if s.Stroke {
+		s.dc.Stroke()
+	} else {
+		s.dc.ClearPath()
 	}
 
 	s.strokeSize -= s.StrokeReduction * s.strokeSize
 	s.InitialAlpha += s.AlphaIncrease
+
+	log.Println("updated")
 }
 
 func (s *Image) Output() image.Image {

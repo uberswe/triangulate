@@ -15,15 +15,24 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"path/filepath"
 	"strconv"
 	"time"
 )
 
 func index(w http.ResponseWriter, r *http.Request) {
-	indexFile := filepath.Join("assets", "build", "index.html")
-
-	tmpl, err := template.New("").ParseFiles(indexFile)
+	f, err := static.Open("assets/build/index.html")
+	if err != nil {
+		log.Println(err.Error())
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+	h, err := ioutil.ReadAll(f)
+	if err != nil {
+		log.Println(err.Error())
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+	tmpl, err := template.New("").Parse(string(h))
 	if err != nil {
 		log.Println(err.Error())
 		http.Error(w, http.StatusText(500), 500)
