@@ -1,6 +1,6 @@
 # Triangulate.xyz
 
-This is the source code for [Triangulate.xyz](https://www.triangulate.xyz) which allows you to create computer generated art.
+This was the source code for Triangulate.xyz which allows you to create computer generated art.
 
 I created this project to learn ReactJS, this was my first project. I also wanted to make a backend in Golang and learn how to integrate Stripe for payments.
 
